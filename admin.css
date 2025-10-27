@@ -1,0 +1,64 @@
+/* General page style */
+body {
+  background-color: #f8f9fa;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #212529;
+}
+
+/* Dashboard heading */
+h1 {
+  color: #212529;
+  font-weight: 700;
+}
+
+/* Statistic cards */
+.stat-card {
+  border: none;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease-in-out;
+}
+.stat-card:hover {
+  transform: scale(1.03);
+}
+
+/* Add Book card */
+.addbook-card {
+  border: none;
+  border-radius: 10px;
+}
+.addbook-card .card-header {
+  background-color: #212529;
+  color: white;
+  font-size: 1rem;
+}
+.addbook-card .form-control,
+.addbook-card .form-select {
+  border-radius: 6px;
+}
+
+/* Buttons */
+.btn-success {
+  font-weight: 500;
+  border-radius: 6px;
+}
+.btn-success:hover {
+  background-color: #157347;
+}
+
+/* Footer */
+footer {
+  font-size: 0.9rem;
+  background-color: #f1f3f5;
+  color: #212529;
+}
+
+/* Navbar links */
+a {
+  color: #212529;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
