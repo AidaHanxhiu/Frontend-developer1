@@ -1,0 +1,53 @@
+/* General page styling */
+body {
+  background-color: #f8f9fa;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #212529;
+}
+
+/* Heading */
+h1 {
+  color: #212529;
+}
+
+/* Borrowed book cards */
+#loansList .card {
+  border: none;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease-in-out;
+}
+
+#loansList .card:hover {
+  transform: scale(1.02);
+}
+
+/* Return button */
+.btn-return {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font-size: 0.9rem;
+}
+.btn-return:hover {
+  background-color: #b02a37;
+}
+
+/* Footer */
+footer {
+  font-size: 0.9rem;
+  background-color: #f1f3f5;
+  color: #212529;
+}
+
+/* Links */
+a {
+  color: #212529;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
