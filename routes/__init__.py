@@ -1,5 +1,3 @@
 from .routes_pages import pages_bp
 
-all_blueprints = [
-    pages_bp
-]
+__all__ = ["pages_bp"]

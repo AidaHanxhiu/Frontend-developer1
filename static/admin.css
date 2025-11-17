@@ -7,7 +7,7 @@ body {
 
 /* Dashboard heading */
 h1 {
-  color: #212529;
+  color: hsl(210, 11%, 15%);
   font-weight: 700;
 }
 
