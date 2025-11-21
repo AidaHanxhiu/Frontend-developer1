@@ -7,7 +7,7 @@ pages_bp = Blueprint("pages", __name__)
 @pages_bp.route("/")
 def index():
     # Start here
-    return render_template("admin.html")
+    return render_template("sign-up.html")
 
 
 @pages_bp.route("/sign-up")
