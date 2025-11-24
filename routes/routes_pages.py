@@ -58,3 +58,6 @@ def all_languages():
 @pages_bp.route("/admin")
 def admin():
     return render_template("admin.html")
+
+
+
