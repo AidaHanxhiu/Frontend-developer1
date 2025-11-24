@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sign Up • Library System</title>
 
-  <!-- CSS connection (this is correct) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='sign-up.css') }}">
+  <!-- Your custom CSS -->
+  <link href="{{ url_for('static', filename='sign-up.css') }}" rel="stylesheet">
 </head>
 
 <body>
@@ -28,33 +28,34 @@
 </nav>
 
 <main>
-  <h1>Create your account</h1>
+  <div class="signup-card">
+    <h1>Create your account</h1>
 
-  <form>
-    <label>First name</label><br>
-    <input required><br><br>
+    <form>
+      <label class="form-label">First name</label>
+      <input class="form-control" required>
 
-    <label>Last name</label><br>
-    <input required><br><br>
+      <label class="form-label">Last name</label>
+      <input class="form-control" required>
 
-    <label>Email</label><br>
-    <input type="email" required><br><br>
+      <label class="form-label">Email</label>
+      <input class="form-control" type="email" required>
 
-    <label>Password</label><br>
-    <input type="password" minlength="6" required><br><br>
+      <label class="form-label">Password</label>
+      <input class="form-control" type="password" minlength="6" required>
 
-    <label>
-      <input type="checkbox" required>
-      I agree to the terms
-    </label><br><br>
+      <div class="form-check">
+        <input type="checkbox" required>
+        <label class="form-check-label">I agree to the terms</label>
+      </div>
 
-    <button type="submit">Create Account</button>
-  </form>
+      <button type="submit" class="btn-dark">Create Account</button>
+    </form>
 
-  <p>
-    Already have an account?
-    <a href="{{ url_for('pages.log_in') }}">Sign in</a>
-  </p>
+    <p>Already have an account?
+      <a href="{{ url_for('pages.log_in') }}">Sign in</a>
+    </p>
+  </div>
 </main>
 
 <footer>
