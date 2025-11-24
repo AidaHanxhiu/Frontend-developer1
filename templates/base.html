@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>{% block title %}Library System{% endblock %}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+<header class="navbar">
+    <div class="logo">📚 Library System</div>
+
+    <nav class="nav-links">
+        <a href="{{ url_for('pages.all_books') }}">All Books</a>
+        <a href="{{ url_for('pages.my_books') }}">My Books</a>
+        <a href="{{ url_for('pages.wish_list') }}">Wishlist</a>
+        <a href="{{ url_for('pages.admin') }}">Admin</a>
+    </nav>
+
+    <div class="auth-links">
+        <a href="{{ url_for('pages.log_in') }}">Login</a>
+        <a href="{{ url_for('pages.sign_up') }}" class="btn-primary">Sign Up</a>
+    </div>
+</header>
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    © 2025 Library System — Demo for class
+</footer>
+
+</body>
+</html>
