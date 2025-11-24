@@ -60,4 +60,29 @@ def admin():
     return render_template("admin.html")
 
 
+# ---------- API ENDPOINTS ----------
 
+from flask import request, jsonify
+
+# Example GET API (required)
+@pages_bp.route("/api/hello", methods=["GET"])
+def api_hello():
+    return jsonify({"message": "Hello from Flask!"})
+
+# LOGIN POST API (connects to your log-in.js)
+@pages_bp.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json()
+
+    email = data.get("email")
+    password = data.get("password")
+
+    # Demo users (you can replace with database later)
+    if email == "admin@library.com" and password == "admin123":
+        return jsonify({"message": "Admin login successful!"})
+
+    elif email == "john@example.com" and password == "student123":
+        return jsonify({"message": "Student login successful!"})
+
+    else:
+        return jsonify({"message": "Invalid credentials"})
