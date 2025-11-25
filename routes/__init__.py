@@ -1,5 +1,7 @@
 from .routes_pages import pages_bp
+from .routes_api import api_bp
 
 all_blueprints = [
-    pages_bp
+    pages_bp,
+    api_bp
 ]

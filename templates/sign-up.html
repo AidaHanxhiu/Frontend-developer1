@@ -10,26 +10,29 @@
 
 <h1>Create your account</h1>
 
-<form class="signup-form">
+<form id="signup-form" class="signup-form">
+
     <label>First name</label>
-    <input required>
+    <input id="first_name" name="first_name" required>
 
     <label>Last name</label>
-    <input required>
+    <input id="last_name" name="last_name" required>
 
     <label>Email</label>
-    <input type="email" required>
+    <input id="email" name="email" type="email" required>
 
     <label>Password</label>
-    <input type="password" minlength="6" required>
+    <input id="password" name="password" type="password" minlength="6" required>
 
     <label class="checkbox">
-        <input type="checkbox" required>
+        <input id="terms" type="checkbox" required>
         I agree to the terms
     </label>
 
     <button type="submit" class="btn-primary">Create Account</button>
 </form>
+
+<p id="signup-message" style="margin-top: 10px;"></p>
 
 <p style="margin-top: 15px;">
     Already have an account?
@@ -38,3 +41,60 @@
 
 {% endblock %}
 
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("signup-form");
+    const msg = document.getElementById("signup-message");
+    const terms = document.getElementById("terms");
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        msg.textContent = "";
+        msg.style.color = "black";
+
+        if (!terms.checked) {
+            msg.textContent = "You must agree to the terms.";
+            msg.style.color = "red";
+            return;
+        }
+
+        const payload = {
+            first_name: document.getElementById("first_name").value,
+            last_name:  document.getElementById("last_name").value,
+            email:      document.getElementById("email").value,
+            password:   document.getElementById("password").value,
+        };
+
+        msg.textContent = "Creating account...";
+
+        try {
+            const response = await fetch("/api/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                msg.textContent = data.message || "Account created!";
+                msg.style.color = "green";
+
+                setTimeout(() => {
+                    window.location.href = "/log-in";
+                }, 1500);
+            } else {
+                msg.textContent = data.message || "Sign up failed";
+                msg.style.color = "red";
+            }
+
+        } catch (error) {
+            msg.textContent = "Error connecting to server";
+            msg.style.color = "red";
+        }
+    });
+});
+</script>
+{% endblock %}

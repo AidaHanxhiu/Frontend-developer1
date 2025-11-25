@@ -1,64 +1,89 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Login • Library System</title>
+{% extends "base.html" %}
 
-  <link href="{{ url_for('static', filename='log-in.css') }}" rel="stylesheet">
-</head>
+{% block title %}Login{% endblock %}
 
-<body>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='log-in.css') }}">
+{% endblock %}
 
-<nav>
-  <a href="{{ url_for('pages.all_books') }}">📚 Library System</a>
+{% block content %}
 
-  <ul>
-    <li><a href="{{ url_for('pages.all_books') }}">All Books</a></li>
-    <li><a href="{{ url_for('pages.my_books') }}">My Books</a></li>
-    <li><a href="{{ url_for('pages.wish_list') }}">Wishlist</a></li>
-    <li><a href="{{ url_for('pages.admin') }}">Admin</a></li>
-  </ul>
+<h1>Library Management – Sign in</h1>
 
-  <div>
-    <a href="{{ url_for('pages.log_in') }}">Login</a>
-    <a href="{{ url_for('pages.sign_up') }}">Sign up</a>
-  </div>
-</nav>
+<form id="login-form" class="login-form">
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" placeholder="admin@library.com" required>
 
-<main>
-  <h1>Library Management – Sign in</h1>
-
-  <form>
-    <label>Email</label><br>
-    <input type="email" placeholder="admin@library.com" required><br><br>
-
-    <label>Password</label><br>
-    <input type="password" placeholder="Enter your password" required><br><br>
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" placeholder="Enter your password" required>
 
     <p><a href="{{ url_for('pages.forgot_password') }}">Forgot password?</a></p>
 
-    <button type="submit">Sign In</button>
-  </form>
+    <button type="submit" class="btn-primary">Sign In</button>
+</form>
 
-  <hr>
+<p id="login-message" style="margin-top: 10px;"></p>
 
-  <p>
+<hr>
+
+<p>
     Don't have an account?
     <a href="{{ url_for('pages.sign_up') }}">Sign up</a>
-  </p>
+</p>
 
-  <div>
+<div style="margin-top: 15px;">
     <strong>Demo Credentials:</strong><br>
     Admin: admin@library.com / admin123<br>
     Student: john@example.com / student123
-  </div>
-</main>
+</div>
 
-<footer>
-  <p>&copy; 2025 Library System — Demo for class</p>
-</footer>
+{% endblock %}
 
-<script src="{{ url_for('static', filename='js/log-in.js') }}"></script>
-</body>
-</html>
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("login-form");
+    const messageEl = document.getElementById("login-message");
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        messageEl.textContent = "Signing in...";
+        messageEl.style.color = "black";
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                messageEl.textContent = data.message;
+                messageEl.style.color = "green";
+
+                // redirect based on role
+                if (data.role === "admin") {
+                    window.location.href = "/admin";
+                } else {
+                    window.location.href = "/my-books";
+                }
+            } else {
+                messageEl.textContent = data.message || "Invalid credentials";
+                messageEl.style.color = "red";
+            }
+
+        } catch (error) {
+            console.error(error);
+            messageEl.textContent = "Error connecting to server";
+            messageEl.style.color = "red";
+        }
+    });
+});
+</script>
+{% endblock %}

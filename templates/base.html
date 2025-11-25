@@ -6,7 +6,10 @@
 
   <title>{% block title %}Library System{% endblock %}</title>
 
+  <!-- Global CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+
+  <!-- Page-specific CSS will be inserted here -->
   {% block extra_css %}{% endblock %}
 </head>
 
@@ -29,12 +32,17 @@
 </header>
 
 <main class="container">
-    {% block content %}{% endblock %}
+    {% block content %}
+    {% endblock %}
 </main>
 
 <footer class="footer">
     © 2025 Library System — Demo for class
 </footer>
+
+<!-- ⭐ VERY IMPORTANT: This block allows your child templates to add JavaScript -->
+{% block extra_js %}
+{% endblock %}
 
 </body>
 </html>
