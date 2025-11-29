@@ -1,10 +1,13 @@
 from flask import Blueprint, jsonify, request
+from app import get_db
+from models.users_model import verify_user, get_user_by_email, create_user
 
-api_bp = Blueprint(
-    "api",
-    __name__,
-    url_prefix="/api"
-)
+api_bp = Blueprint("api", __name__, url_prefix="/api")
+
+# Ensure the Blueprint is registered in your main Flask app file
+# Example:
+# from routes.routes_api import api_bp
+# app.register_blueprint(api_bp)
 
 # ---------- GET ROUTES ----------
 
@@ -25,32 +28,26 @@ def get_wishlist():
     return jsonify({"wishlist": []})
 
 
-# ---------- POST ROUTES ----------
-
+# ---------- LOGIN ROUTE ----------
 @api_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
     email = data.get("email")
     password = data.get("password")
 
-    # create users_models.py in models folder
-    # users_models.py file should have a function called get_all_users() that connects to your db
-    # get list of users from users_models.py
+    user = verify_user(email, password)
 
-    for user in USERS:
-        if user["email"] == email and user["password"] == password:
-            return jsonify({
-                "message": "Login successful",
-                "role": user["role"],
-                "user_id": user["id"]
-            })
+    if user:
+        return jsonify({
+            "message": "Login successful",
+            "role": user["role"],
+            "user_id": str(user["_id"])
+        })
 
     return jsonify({"message": "Invalid credentials"}), 400
 
 
-# ---------------------------------------------------
-# SIGNUP
-# ---------------------------------------------------
+# ---------- SIGNUP ROUTE ----------
 @api_bp.route("/signup", methods=["POST"])
 def signup():
     data = request.get_json() or {}
@@ -60,31 +57,26 @@ def signup():
     email = data.get("email")
     password = data.get("password")
 
-    if not email or not password:
-        return jsonify({"message": "Email and password are required"}), 400
+    if get_user_by_email(email):
+        return jsonify({"message": "Email already exists"}), 400
 
-    # check if user already exists
-    for user in USERS:
-        if user["email"] == email:
-            return jsonify({"message": "Email already exists"}), 400
-
-    # create new user
-    new_id = max([u["id"] for u in USERS]) + 1
-    new_user = {
-        "id": new_id,
-        "email": email,
-        "password": password,
-        "role": "student",
-        "first_name": first_name,
-        "last_name": last_name
-    }
-
-    USERS.append(new_user)
+    user = create_user(first_name, last_name, email, password)
 
     return jsonify({
         "message": "Account created successfully",
-        "role": "student",
-        "user_id": new_id
+        "role": user["role"],
+        "user_id": str(user["_id"])
     })
 
 
+# ---------- GET ALL USERS ----------
+@api_bp.route("/users", methods=["GET"])
+def get_users():
+    db = get_db()
+    users = list(db.users.find({}))
+    
+    # Make MongoDB ObjectIDs JSON serializable
+    for u in users:
+        u["_id"] = str(u["_id"])
+    
+    return jsonify(users)
