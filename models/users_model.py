@@ -1,37 +1,31 @@
-import bcrypt
-from app import get_db
-
-
-db = get_db()
-users_collection = db["users"]  # collection name
-
+from flask import current_app
+from werkzeug.security import generate_password_hash, check_password_hash
 
 def get_user_by_email(email):
-    return users_collection.find_one({"email": email})
+    db = current_app.config["DB"]
+    return db.users.find_one({"email": email})
 
 
-def create_user(first_name, last_name, email, password, role="student"):
-    hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-    
+def create_user(first_name, last_name, email, password):
+    db = current_app.config["DB"]
+    hashed_pw = generate_password_hash(password)
+
     user = {
         "first_name": first_name,
         "last_name": last_name,
         "email": email,
-        "password": hashed_pw,  # hashed password stored
-        "role": role
+        "password": hashed_pw,
+        "role": "user"
     }
 
-    users_collection.insert_one(user)
+    db.users.insert_one(user)
     return user
 
 
 def verify_user(email, password):
     user = get_user_by_email(email)
-    if not user:
-        return None
-    
-    # check hashed password
-    if bcrypt.checkpw(password.encode("utf-8"), user["password"]):
+
+    if user and check_password_hash(user["password"], password):
         return user
-    
+
     return None

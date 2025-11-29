@@ -1,5 +1,6 @@
+import logging
 from flask import Blueprint, jsonify, request
-from app import get_db
+from flask import current_app
 from models.users_model import verify_user, get_user_by_email, create_user
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -8,6 +9,8 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 # Example:
 # from routes.routes_api import api_bp
 # app.register_blueprint(api_bp)
+
+logging.basicConfig(level=logging.DEBUG)
 
 # ---------- GET ROUTES ----------
 
@@ -31,7 +34,10 @@ def get_wishlist():
 # ---------- LOGIN ROUTE ----------
 @api_bp.route("/login", methods=["POST"])
 def login():
+    logging.debug("Received POST request at /api/login")
     data = request.get_json() or {}
+    logging.debug(f"Request data: {data}")
+
     email = data.get("email")
     password = data.get("password")
 
@@ -72,7 +78,8 @@ def signup():
 # ---------- GET ALL USERS ----------
 @api_bp.route("/users", methods=["GET"])
 def get_users():
-    db = get_db()
+    db = current_app.config["DB"]
+
     users = list(db.users.find({}))
     
     # Make MongoDB ObjectIDs JSON serializable
