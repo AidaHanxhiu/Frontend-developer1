@@ -1,75 +1,59 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>All Languages • Library System</title>
+{% extends "base.html" %}
 
-  <link href="{{ url_for('static', filename='all-languages.css') }}" rel="stylesheet">
-</head>
+{% block title %}All Languages{% endblock %}
 
-<body>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='all-languages.css') }}">
+{% endblock %}
 
-<nav>
-  <a href="{{ url_for('pages.all_books') }}">📚 Library System</a>
+{% block content %}
 
-  <ul>
-    <li><a href="{{ url_for('pages.all_books') }}">All Books</a></li>
-    <li><a href="{{ url_for('pages.my_books') }}">My Books</a></li>
-    <li><a href="{{ url_for('pages.wish_list') }}">Wishlist</a></li>
-    <li><a href="{{ url_for('pages.admin') }}">Admin</a></li>
-    <li><a href="{{ url_for('pages.all_languages') }}">All Languages</a></li>
-  </ul>
+<h1 class="mb-4">Explore Books by Language</h1>
 
-  <div>
-    <a href="{{ url_for('pages.log_in') }}">Login</a>
-    <a href="{{ url_for('pages.sign_up') }}">Sign up</a>
-  </div>
-</nav>
+<div class="row" id="languagesGrid">
+  <!-- Languages will be loaded here -->
+</div>
 
-<main>
+{% endblock %}
 
-  <h1>Explore Books by Language</h1>
-
-  <div class="grid">
-
-    <div class="lang-card">
-      <h2>English</h2>
-      <p>Over 500 books available</p>
-      <a href="{{ url_for('pages.all_books') }}">Browse</a>
-    </div>
-
-    <div class="lang-card">
-      <h2>Albanian</h2>
-      <p>120 books available</p>
-      <a href="{{ url_for('pages.all_books') }}">Browse</a>
-    </div>
-
-    <div class="lang-card">
-      <h2>Italian</h2>
-      <p>75 books available</p>
-      <a href="{{ url_for('pages.all_books') }}">Browse</a>
-    </div>
-
-    <div class="lang-card">
-      <h2>German</h2>
-      <p>60 books available</p>
-      <a href="{{ url_for('pages.all_books') }}">Browse</a>
-    </div>
-
-    <div class="lang-card">
-      <h2>French</h2>
-      <p>50 books available</p>
-      <a href="{{ url_for('pages.all_books') }}">Browse</a>
-    </div>
-
-  </div>
-
-</main>
-
-<footer>
-  <p>&copy; 2025 Library System — Demo for class</p>
-</footer>
-
-</body>
-</html>
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  function loadLanguages() {
+    fetch("/api/languages")
+      .then(res => res.json())
+      .then(data => {
+        displayLanguages(data.languages || []);
+      })
+      .catch(err => console.error("Error:", err));
+  }
+  
+  function displayLanguages(languages) {
+    const grid = document.getElementById("languagesGrid");
+    
+    if (languages.length === 0) {
+      grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No languages found.</div></div>';
+      return;
+    }
+    
+    grid.innerHTML = languages.map(lang => `
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">${lang}</h5>
+            <p class="card-text">Browse books in ${lang}</p>
+          </div>
+          <div class="card-footer">
+            <a href="/all-books?language=${encodeURIComponent(lang)}" class="btn btn-primary">
+              <i class="bi bi-book"></i> Browse
+            </a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  loadLanguages();
+});
+</script>
+{% endblock %}

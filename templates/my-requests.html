@@ -1,22 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Wishlist & Requests{% endblock %}
+{% block title %}My Requests{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='wish-list.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 {% endblock %}
 
 {% block content %}
 
-<h1 class="mb-4">My Wishlist</h1>
+<h1 class="mb-4">My Book Requests</h1>
 
-<div class="row" id="wishGrid">
-  <!-- Wishlist items will be loaded here -->
-</div>
-
-<h2 class="mt-5 mb-4">My Book Requests</h2>
-
-<div class="card">
+<!-- Request Form -->
+<div class="card mb-4">
   <div class="card-header">
     <h5 class="mb-0">Request a New Book</h5>
   </div>
@@ -43,7 +38,8 @@
   </div>
 </div>
 
-<div class="card mt-4">
+<!-- Requests List -->
+<div class="card">
   <div class="card-header">
     <h5 class="mb-0">My Requests</h5>
   </div>
@@ -100,77 +96,9 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // Load wishlist
-  function loadWishlist() {
-    fetch("/api/wishlist")
-      .then(res => res.json())
-      .then(data => {
-        displayWishlist(data.wishlist || []);
-      })
-      .catch(err => console.error("Error:", err));
-  }
+  const requestForm = document.getElementById("requestForm");
   
-  function displayWishlist(wishlist) {
-    const grid = document.getElementById("wishGrid");
-    
-    if (wishlist.length === 0) {
-      grid.innerHTML = `
-        <div class="col-12">
-          <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> Your wishlist is empty. 
-            <a href="{{ url_for('pages.all_books') }}">Browse books</a> to add some!
-          </div>
-        </div>
-      `;
-      return;
-    }
-    
-    // Fetch book details for each wishlist item
-    Promise.all(wishlist.map(item => 
-      fetch(`/api/books/${item.book_id}`).then(res => res.json())
-    ))
-    .then(books => {
-      grid.innerHTML = books.map(book => `
-        <div class="col-md-4 mb-4">
-          <div class="card h-100">
-            <div class="card-body">
-              <h5 class="card-title">${book.title || 'Untitled'}</h5>
-              <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p>
-              <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p>
-              <span class="badge ${book.available ? 'bg-success' : 'bg-secondary'}">
-                ${book.available ? 'Available' : 'Borrowed'}
-              </span>
-            </div>
-            <div class="card-footer">
-              <a href="/book/${book._id}" class="btn btn-primary btn-sm">View Details</a>
-              <button class="btn btn-danger btn-sm" onclick="removeFromWishlist('${book._id}')">
-                <i class="bi bi-heart-fill"></i> Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    })
-    .catch(err => console.error("Error loading books:", err));
-  }
-  
-  window.removeFromWishlist = function(bookId) {
-    fetch(`/api/wishlist/${bookId}`, {
-      method: "DELETE"
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert("Removed from wishlist");
-      loadWishlist();
-    })
-    .catch(err => {
-      alert("Error removing from wishlist");
-      console.error(err);
-    });
-  };
-  
-  // Request form
-  document.getElementById("requestForm").addEventListener("submit", function(e) {
+  requestForm.addEventListener("submit", function(e) {
     e.preventDefault();
     const bookTitle = document.getElementById("bookTitle").value;
     const author = document.getElementById("author").value;
@@ -183,11 +111,15 @@ document.addEventListener("DOMContentLoaded", function() {
     })
     .then(res => res.json())
     .then(data => {
-      alert("Request submitted successfully!");
-      location.reload();
+      if (res.ok) {
+        alert("Request submitted successfully!");
+        location.reload();
+      } else {
+        alert(data.message || "Error submitting request");
+      }
     })
     .catch(err => {
-      alert("Error submitting request");
+      alert("Error connecting to server");
       console.error(err);
     });
   });
@@ -208,8 +140,7 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     }
   };
-  
-  loadWishlist();
 });
 </script>
 {% endblock %}
+

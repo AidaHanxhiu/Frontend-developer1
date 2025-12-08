@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}My Books{% endblock %}
+{% block title %}My Loans{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='my-books.css') }}">
@@ -8,10 +8,12 @@
 
 {% block content %}
 
-<h1 class="mb-4">My Borrowed Books</h1>
+<h1 class="mb-4">My Loans</h1>
 
-<div id="loansList" class="row">
-  <!-- Loans will be loaded here -->
+<div id="loansContainer">
+  <div class="row" id="loansList">
+    <!-- Loans will be loaded here -->
+  </div>
 </div>
 
 {% endblock %}
@@ -92,3 +94,4 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 {% endblock %}
+

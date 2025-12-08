@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Borrow Book{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h1 class="mb-4">Borrow Book</h1>
+    
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">{{ book.title }}</h5>
+        <p class="card-text"><strong>Author:</strong> {{ book.author }}</p>
+        <p class="card-text"><strong>Year:</strong> {{ book.year }}</p>
+        <p class="card-text"><strong>Genre:</strong> <span class="badge bg-primary">{{ book.genre }}</span></p>
+        {% if book.available %}
+        <span class="badge bg-success">Available</span>
+        {% else %}
+        <span class="badge bg-secondary">Currently Borrowed</span>
+        {% endif %}
+      </div>
+    </div>
+    
+    {% if book.available %}
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Borrowing Information</h5>
+        <p class="card-text">You are about to borrow this book. The loan period is 14 days.</p>
+        
+        <form id="borrowForm">
+          <input type="hidden" id="bookId" value="{{ book._id }}">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Please confirm that you want to borrow this book.
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Confirm Borrow
+          </button>
+          <a href="{{ url_for('pages.book_details', book_id=book._id) }}" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+      <i class="bi bi-exclamation-triangle"></i> This book is currently not available for borrowing.
+    </div>
+    <a href="{{ url_for('pages.all_books') }}" class="btn btn-primary">Browse Other Books</a>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const borrowForm = document.getElementById("borrowForm");
+  if (borrowForm) {
+    borrowForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const bookId = document.getElementById("bookId").value;
+      
+      fetch("/api/loans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ book_id: bookId })
+      })
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        }
+        return res.json().then(data => Promise.reject(data));
+      })
+      .then(data => {
+        alert("Book borrowed successfully!");
+        window.location.href = "/my-books";
+      })
+      .catch(err => {
+        alert("Error connecting to server");
+        console.error(err);
+      });
+    });
+  }
+});
+</script>
+{% endblock %}
+

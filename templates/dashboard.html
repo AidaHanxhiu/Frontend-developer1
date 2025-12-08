@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="row mb-4">
+  <div class="col-12">
+    <h1 class="mb-4">Welcome to Your Dashboard</h1>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+  <div class="col-md-4 mb-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-book"></i> Active Loans</h5>
+        <h2 class="text-primary">{{ active_loans|length }}</h2>
+        <a href="{{ url_for('pages.my_books') }}" class="btn btn-outline-primary btn-sm">View All</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-heart"></i> Wishlist</h5>
+        <h2 class="text-danger">{{ wishlist_count }}</h2>
+        <a href="{{ url_for('pages.wish_list') }}" class="btn btn-outline-danger btn-sm">View Wishlist</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-search"></i> Browse Books</h5>
+        <p class="card-text">Discover new books</p>
+        <a href="{{ url_for('pages.all_books') }}" class="btn btn-outline-success btn-sm">Browse</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2 d-md-flex">
+          <a href="{{ url_for('pages.all_books') }}" class="btn btn-primary">
+            <i class="bi bi-book"></i> Browse All Books
+          </a>
+          <a href="{{ url_for('pages.search') }}" class="btn btn-outline-primary">
+            <i class="bi bi-search"></i> Search Books
+          </a>
+          <a href="{{ url_for('pages.my_requests') }}" class="btn btn-outline-info">
+            <i class="bi bi-file-earmark-text"></i> My Requests
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Recent Activity</h5>
+      </div>
+      <div class="card-body">
+        {% if active_loans %}
+        <h6>Active Loans</h6>
+        <ul class="list-group list-group-flush">
+          {% for loan in active_loans[:5] %}
+          <li class="list-group-item">
+            <i class="bi bi-book"></i> Loan ID: {{ loan._id }}
+            <span class="badge bg-primary ms-2">Active</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">No active loans. <a href="{{ url_for('pages.all_books') }}">Browse books</a> to get started!</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+

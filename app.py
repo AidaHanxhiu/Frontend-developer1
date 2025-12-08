@@ -1,40 +1,21 @@
 from flask import Flask
-from routes import all_blueprints
-from pymongo import MongoClient
+from flask_pymongo import PyMongo
+from routes.routes_pages import pages_bp
+from routes.routes_api import api_bp
 
-# -------------------------------
-# DATABASE CONNECTION (MongoDB)
-# -------------------------------
-def get_db():
-    # TODO: replace this with your real MongoDB Atlas connection string
-    client = MongoClient("YOUR_MONGODB_ATLAS_URI")
+app = Flask(__name__)
+app.secret_key = "supersecret123"  # required for sessions
 
-    # Choose the database name
-    db = client["library_system"]
+# ------------------------------
+# MONGODB CONNECTION
+# ------------------------------
+app.config["MONGO_URI"] = "mongodb://localhost:27017/librarydb"
+mongo = PyMongo(app)
 
-    return db
+# register blueprints
+app.register_blueprint(pages_bp)
+app.register_blueprint(api_bp)
 
-
-# -------------------------------
-# FLASK APP FACTORY
-# -------------------------------
-def create_app():
-    app = Flask(__name__)
-
-    # Make get_db available inside the app context if needed
-    app.get_db = get_db
-
-    # REGISTER ALL BLUEPRINTS
-    for bp in all_blueprints:
-        app.register_blueprint(bp)
-
-    return app
-
-
-# -------------------------------
-# RUNNING THE APP
-# -------------------------------
-app = create_app()
-
+# run app
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True)

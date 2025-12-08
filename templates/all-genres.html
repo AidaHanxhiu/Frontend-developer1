@@ -1,61 +1,59 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>All Genres • Library System</title>
+{% extends "base.html" %}
 
-  <link href="{{ url_for('static', filename='all-genres.css') }}" rel="stylesheet">
-</head>
+{% block title %}All Genres{% endblock %}
 
-<body>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='all-genres.css') }}">
+{% endblock %}
 
-<nav>
-  <a href="{{ url_for('pages.all_books') }}">📚 Library System</a>
+{% block content %}
 
-  <ul>
-    <li><a href="{{ url_for('pages.all_books') }}">All Books</a></li>
-    <li><a href="{{ url_for('pages.my_books') }}">My Books</a></li>
-    <li><a href="{{ url_for('pages.wish_list') }}">Wishlist</a></li>
-    <li><a href="{{ url_for('pages.admin') }}">Admin</a></li>
-    <li><a href="{{ url_for('pages.all_genres') }}">All Genres</a></li>
-  </ul>
+<h1 class="mb-4">Browse by Genre</h1>
 
-  <div>
-    <a href="{{ url_for('pages.log_in') }}">Login</a>
-    <a href="{{ url_for('pages.sign_up') }}">Sign up</a>
-  </div>
-</nav>
+<div class="row" id="genresGrid">
+  <!-- Genres will be loaded here -->
+</div>
 
-<main>
-  <h1>Browse by Genre</h1>
+{% endblock %}
 
-  <div class="grid">
-
-    <div class="genre-card">
-      <h2>Fiction</h2>
-      <p>Classics & contemporary</p>
-      <a href="{{ url_for('pages.all_books') }}">See books</a>
-    </div>
-
-    <div class="genre-card">
-      <h2>Science Fiction</h2>
-      <p>Futuristic & dystopian</p>
-      <a href="{{ url_for('pages.all_books') }}">See books</a>
-    </div>
-
-    <div class="genre-card">
-      <h2>Romance</h2>
-      <p>Love stories</p>
-      <a href="{{ url_for('pages.all_books') }}">See books</a>
-    </div>
-
-  </div>
-</main>
-
-<footer>
-  <p>&copy; 2025 Library System — Demo for class</p>
-</footer>
-
-</body>
-</html>
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  function loadGenres() {
+    fetch("/api/genres")
+      .then(res => res.json())
+      .then(data => {
+        displayGenres(data.genres || []);
+      })
+      .catch(err => console.error("Error:", err));
+  }
+  
+  function displayGenres(genres) {
+    const grid = document.getElementById("genresGrid");
+    
+    if (genres.length === 0) {
+      grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No genres found.</div></div>';
+      return;
+    }
+    
+    grid.innerHTML = genres.map(genre => `
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">${genre.name}</h5>
+            <p class="card-text">${genre.description || 'Browse books in this genre'}</p>
+          </div>
+          <div class="card-footer">
+            <a href="/all-books?genre=${encodeURIComponent(genre.name)}" class="btn btn-primary">
+              <i class="bi bi-book"></i> See Books
+            </a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  loadGenres();
+});
+</script>
+{% endblock %}

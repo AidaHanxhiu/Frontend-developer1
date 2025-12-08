@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Search Books{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='all-books.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<h1 class="mb-4">Search Books</h1>
+
+<!-- Search Form -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form id="searchForm" class="row g-3">
+      <div class="col-md-6">
+        <label for="searchInput" class="form-label">Search</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control" id="searchInput" placeholder="Search by title or author..." value="{{ query }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label for="genreSelect" class="form-label">Genre</label>
+        <select class="form-select" id="genreSelect">
+          <option value="">All Genres</option>
+          {% for genre in genres %}
+          <option value="{{ genre.name }}">{{ genre.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="languageSelect" class="form-label">Language</label>
+        <select class="form-select" id="languageSelect">
+          <option value="">All Languages</option>
+          <option value="English">English</option>
+          <option value="Albanian">Albanian</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-dark">
+          <i class="bi bi-search"></i> Search
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="clearBtn">Clear</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results -->
+<div id="resultsContainer">
+  <div class="row" id="booksGrid">
+    <!-- Books will be loaded here -->
+  </div>
+</div>
+
+<!-- Pagination -->
+<nav aria-label="Page navigation" class="mt-4">
+  <ul class="pagination justify-content-center" id="pagination">
+    <!-- Pagination will be added here -->
+  </ul>
+</nav>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const searchForm = document.getElementById("searchForm");
+  const booksGrid = document.getElementById("booksGrid");
+  
+  function loadBooks(query = "", genre = "", language = "") {
+    let url = "/api/books?";
+    if (query) url += `search=${encodeURIComponent(query)}&`;
+    if (genre) url += `genre=${encodeURIComponent(genre)}&`;
+    if (language) url += `language=${encodeURIComponent(language)}&`;
+    
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        displayBooks(data.books || []);
+      })
+      .catch(err => console.error("Error:", err));
+  }
+  
+  function displayBooks(books) {
+    if (books.length === 0) {
+      booksGrid.innerHTML = '<div class="col-12"><div class="alert alert-info">No books found.</div></div>';
+      return;
+    }
+    
+    booksGrid.innerHTML = books.map(book => `
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">${book.title || 'Untitled'}</h5>
+            <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p>
+            <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p>
+            <p class="card-text"><strong>Genre:</strong> ${book.genre || 'N/A'}</p>
+            <span class="badge ${book.available ? 'bg-success' : 'bg-secondary'}">
+              ${book.available ? 'Available' : 'Borrowed'}
+            </span>
+          </div>
+          <div class="card-footer">
+            <a href="/book/${book._id}" class="btn btn-primary btn-sm">View Details</a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  searchForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const query = document.getElementById("searchInput").value;
+    const genre = document.getElementById("genreSelect").value;
+    const language = document.getElementById("languageSelect").value;
+    loadBooks(query, genre, language);
+  });
+  
+  document.getElementById("clearBtn").addEventListener("click", function() {
+    document.getElementById("searchInput").value = "";
+    document.getElementById("genreSelect").value = "";
+    document.getElementById("languageSelect").value = "";
+    loadBooks();
+  });
+  
+  // Load initial books
+  loadBooks("{{ query }}");
+});
+</script>
+{% endblock %}
+

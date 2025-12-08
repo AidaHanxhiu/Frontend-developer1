@@ -1,60 +1,135 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>All Books • Library System</title>
+{% extends "base.html" %}
 
-  <link href="{{ url_for('static', filename='all-books.css') }}" rel="stylesheet">
-</head>
+{% block title %}All Books{% endblock %}
 
-<body>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='all-books.css') }}">
+{% endblock %}
 
-<nav>
-  <a href="{{ url_for('pages.all_books') }}">📚 Library System</a>
+{% block content %}
 
-  <ul>
-    <li><a href="{{ url_for('pages.all_books') }}">All Books</a></li>
-    <li><a href="{{ url_for('pages.my_books') }}">My Books</a></li>
-    <li><a href="{{ url_for('pages.wish_list') }}">Wishlist</a></li>
-    <li><a href="{{ url_for('pages.admin') }}">Admin</a></li>
-  </ul>
+<h1 class="mb-4">Search Books</h1>
 
-  <div>
-    <a href="{{ url_for('pages.log_in') }}">Login</a>
-    <a href="{{ url_for('pages.sign_up') }}">Sign up</a>
+<!-- Filter Card -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form id="filterForm" class="row g-3">
+      <div class="col-md-4">
+        <label for="search" class="form-label">Search</label>
+        <input type="text" class="form-control" id="search" placeholder="Search by title or author...">
+      </div>
+      <div class="col-md-3">
+        <label for="genre" class="form-label">Genre</label>
+        <select class="form-select" id="genre">
+          <option value="">All Genres</option>
+          {% for genre in genres %}
+          <option value="{{ genre.name }}">{{ genre.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="lang" class="form-label">Language</label>
+        <select class="form-select" id="lang">
+          <option value="">All Languages</option>
+          <option value="English">English</option>
+          <option value="Albanian">Albanian</option>
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">&nbsp;</label>
+        <button type="submit" class="btn btn-dark w-100">Filter</button>
+      </div>
+      <div class="col-12">
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-outline-dark active" id="tabAll">All Books</button>
+          <button type="button" class="btn btn-outline-dark" id="tabAvail">Available Only</button>
+        </div>
+      </div>
+    </form>
   </div>
-</nav>
+</div>
 
-<main>
-  <h1>Search Books</h1>
+<!-- Books Grid -->
+<div class="row" id="booksGrid">
+  <!-- Books will be loaded here -->
+</div>
 
-  <div class="filter-box">
+{% endblock %}
 
-    <input id="search" placeholder="Search by title or author...">
-
-    <select id="genre"><option value="">All Genres</option></select>
-
-    <select id="lang">
-      <option value="">All Languages</option>
-      <option>English</option>
-      <option>Albanian</option>
-    </select>
-
-    <button>Filter</button>
-
-    <div class="tabs">
-      <button id="tabAll">All Books</button>
-      <button id="tabAvail">Available Only</button>
-    </div>
-  </div>
-
-  <div id="booksGrid"></div>
-</main>
-
-<footer>
-  <p>&copy; 2025 Library System — Demo for class</p>
-</footer>
-
-</body>
-</html>
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  let currentFilter = "all";
+  
+  function loadBooks(filter = "all", search = "", genre = "", lang = "") {
+    let url = "/api/books?";
+    if (filter === "available") url += "available=true&";
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    if (genre) url += `genre=${encodeURIComponent(genre)}&`;
+    if (lang) url += `language=${encodeURIComponent(lang)}&`;
+    
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        displayBooks(data.books || []);
+      })
+      .catch(err => console.error("Error:", err));
+  }
+  
+  function displayBooks(books) {
+    const grid = document.getElementById("booksGrid");
+    
+    if (books.length === 0) {
+      grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No books found.</div></div>';
+      return;
+    }
+    
+    grid.innerHTML = books.map(book => `
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">${book.title || 'Untitled'}</h5>
+            <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p>
+            <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p>
+            <p class="card-text"><strong>Genre:</strong> ${book.genre || 'N/A'}</p>
+            <span class="badge ${book.available ? 'bg-success' : 'bg-secondary'}">
+              ${book.available ? 'Available' : 'Borrowed'}
+            </span>
+          </div>
+          <div class="card-footer">
+            <a href="/book/${book._id}" class="btn btn-primary btn-sm">View Details</a>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  
+  document.getElementById("filterForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const search = document.getElementById("search").value;
+    const genre = document.getElementById("genre").value;
+    const lang = document.getElementById("lang").value;
+    loadBooks(currentFilter, search, genre, lang);
+  });
+  
+  document.getElementById("tabAll").addEventListener("click", function() {
+    currentFilter = "all";
+    this.classList.add("active");
+    document.getElementById("tabAvail").classList.remove("active");
+    loadBooks(currentFilter);
+  });
+  
+  document.getElementById("tabAvail").addEventListener("click", function() {
+    currentFilter = "available";
+    this.classList.add("active");
+    document.getElementById("tabAll").classList.remove("active");
+    loadBooks(currentFilter);
+  });
+  
+  // Load initial books
+  loadBooks();
+});
+</script>
+{% endblock %}

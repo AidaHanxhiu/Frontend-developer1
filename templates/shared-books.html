@@ -1,64 +1,22 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Books Shared With Me • Library System</title>
+{% extends "base.html" %}
 
-  <link href="{{ url_for('static', filename='shared-books.css') }}" rel="stylesheet">
-</head>
+{% block title %}Books Shared With Me{% endblock %}
 
-<body>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='shared-books.css') }}">
+{% endblock %}
 
-<nav>
-  <a href="{{ url_for('pages.all_books') }}">📚 Library System</a>
+{% block content %}
 
-  <ul>
-    <li><a href="{{ url_for('pages.all_books') }}">All Books</a></li>
-    <li><a href="{{ url_for('pages.my_books') }}">My Books</a></li>
-    <li><a href="{{ url_for('pages.wish_list') }}">Wishlist</a></li>
-    <li><a href="{{ url_for('pages.admin') }}">Admin</a></li>
-    <li><a href="{{ url_for('pages.shared_books') }}">Shared With Me</a></li>
-  </ul>
+<h1 class="mb-4">Books Shared With Me</h1>
 
-  <div>
-    <a href="{{ url_for('pages.log_in') }}">Login</a>
-    <a href="{{ url_for('pages.sign_up') }}">Sign up</a>
+<div class="row" id="sharedBooksGrid">
+  <div class="col-12">
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle"></i> This feature allows users to share books with each other. 
+      Currently, no books have been shared with you.
+    </div>
   </div>
-</nav>
+</div>
 
-<main>
-  <h1>Books Shared With Me</h1>
-
-  <div id="sharedBooksGrid">
-
-    <div class="shared-card">
-      <img src="https://covers.openlibrary.org/b/id/295577-S.jpg" alt="Pride and Prejudice cover">
-      <h2>Pride and Prejudice</h2>
-      <p>Shared by: Emma Johnson</p>
-      <button>Read Now</button>
-    </div>
-
-    <div class="shared-card">
-      <img src="https://covers.openlibrary.org/b/id/8374724-S.jpg" alt="1984 cover">
-      <h2>1984</h2>
-      <p>Shared by: David Green</p>
-      <button>Read Now</button>
-    </div>
-
-    <div class="shared-card">
-      <img src="https://covers.openlibrary.org/b/id/7222246-S.jpg" alt="The Great Gatsby cover">
-      <h2>The Great Gatsby</h2>
-      <p>Shared by: Sarah Lee</p>
-      <button>Read Now</button>
-    </div>
-
-  </div>
-</main>
-
-<footer>
-  <p>&copy; 2025 Library System — Demo for class</p>
-</footer>
-
-</body>
-</html>
+{% endblock %}
