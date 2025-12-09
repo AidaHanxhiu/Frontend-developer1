@@ -1,6 +1,7 @@
 import logging
 from flask import Blueprint, jsonify, request, session
 from flask import current_app
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, verify_jwt_in_request
 from bson import ObjectId
 from bson.json_util import dumps
 
@@ -52,11 +53,37 @@ def serialize_doc(doc):
     return doc
 
 
+# Helper function to get user_id from JWT or session
+def get_current_user_id():
+    """Get user_id from JWT token or session (supports both authentication methods)"""
+    # Try to get from JWT token first (if present)
+    try:
+        # Check if JWT token is present in request (optional verification)
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            return user_id
+    except:
+        # No JWT token or invalid token, fall back to session
+        pass
+    
+    # Fall back to session
+    return session.get("user_id")
+
+
+# Helper function to get user_role from JWT or session
+def get_current_user_role():
+    """Get user_role from JWT token or session (supports both authentication methods)"""
+    # Try to get from session first (JWT doesn't store role by default)
+    # In a production app, you might want to store role in JWT claims
+    return session.get("user_role")
+
+
 # ---------- AUTHENTICATION ROUTES ----------
 
 @api_bp.route("/login", methods=["POST"])
 def login():
-    """Login endpoint"""
+    """Login endpoint with JWT token generation"""
     try:
         data = request.get_json() or {}
         email = data.get("email")
@@ -68,12 +95,18 @@ def login():
         user = verify_user(email, password)
 
         if user:
+            # Create JWT token
+            access_token = create_access_token(identity=str(user["_id"]))
+            
+            # Keep existing session logic for backward compatibility
             session.permanent = True
             session["user_id"] = str(user["_id"])
             session["user_email"] = user["email"]
             session["user_role"] = user["role"]
+            
             return jsonify({
                 "message": "Login successful",
+                "access_token": access_token,
                 "role": user["role"],
                 "user_id": str(user["_id"])
             })
@@ -160,7 +193,8 @@ def get_book(book_id):
 @api_bp.route("/books", methods=["POST"])
 def add_book():
     """Create a new book (admin only)"""
-    if session.get("user_role") != "admin":
+    user_role = get_current_user_role()
+    if user_role != "admin":
         return jsonify({"message": "Unauthorized"}), 403
 
     data = request.get_json() or {}
@@ -171,7 +205,8 @@ def add_book():
 @api_bp.route("/books/<book_id>", methods=["PUT"])
 def update_book_route(book_id):
     """Update a book (admin only)"""
-    if session.get("user_role") != "admin":
+    user_role = get_current_user_role()
+    if user_role != "admin":
         return jsonify({"message": "Unauthorized"}), 403
 
     data = request.get_json() or {}
@@ -184,7 +219,8 @@ def update_book_route(book_id):
 @api_bp.route("/books/<book_id>", methods=["DELETE"])
 def delete_book_route(book_id):
     """Delete a book (admin only)"""
-    if session.get("user_role") != "admin":
+    user_role = get_current_user_role()
+    if user_role != "admin":
         return jsonify({"message": "Unauthorized"}), 403
 
     if delete_book(book_id):
@@ -197,7 +233,7 @@ def delete_book_route(book_id):
 @api_bp.route("/loans", methods=["GET"])
 def get_loans():
     """Get user's loans"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -208,7 +244,7 @@ def get_loans():
 @api_bp.route("/loans/active", methods=["GET"])
 def get_active_loans_route():
     """Get user's active loans"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -219,7 +255,7 @@ def get_active_loans_route():
 @api_bp.route("/loans", methods=["POST"])
 def borrow_book():
     """Borrow a book"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -235,7 +271,7 @@ def borrow_book():
 @api_bp.route("/loans/<loan_id>/return", methods=["POST"])
 def return_book(loan_id):
     """Return a book"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -249,7 +285,7 @@ def return_book(loan_id):
 @api_bp.route("/wishlist", methods=["GET"])
 def get_wishlist():
     """Get user's wishlist"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -260,7 +296,7 @@ def get_wishlist():
 @api_bp.route("/wishlist", methods=["POST"])
 def add_to_wishlist_route():
     """Add book to wishlist"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -276,7 +312,7 @@ def add_to_wishlist_route():
 @api_bp.route("/wishlist/<book_id>", methods=["DELETE"])
 def remove_from_wishlist_route(book_id):
     """Remove book from wishlist"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -290,11 +326,12 @@ def remove_from_wishlist_route(book_id):
 @api_bp.route("/requests", methods=["GET"])
 def get_requests():
     """Get user's requests or all requests (admin)"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
-    if session.get("user_role") == "admin":
+    user_role = get_current_user_role()
+    if user_role == "admin":
         requests = get_all_requests()
     else:
         requests = get_user_requests(user_id)
@@ -305,7 +342,7 @@ def get_requests():
 @api_bp.route("/requests", methods=["POST"])
 def create_request_route():
     """Create a book request"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -322,7 +359,7 @@ def create_request_route():
 @api_bp.route("/requests/<request_id>", methods=["DELETE"])
 def delete_request_route(request_id):
     """Delete a request"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -347,7 +384,7 @@ def get_reviews(book_id):
 @api_bp.route("/books/<book_id>/reviews", methods=["POST"])
 def add_review(book_id):
     """Add a review for a book"""
-    user_id = session.get("user_id")
+    user_id = get_current_user_id()
     if not user_id:
         return jsonify({"message": "Not authenticated"}), 401
 
@@ -394,7 +431,8 @@ def get_languages():
 @api_bp.route("/users", methods=["GET"])
 def get_users():
     """Get all users (admin only)"""
-    if session.get("user_role") != "admin":
+    user_role = get_current_user_role()
+    if user_role != "admin":
         return jsonify({"message": "Unauthorized"}), 403
 
     users = get_all_users()
@@ -404,7 +442,8 @@ def get_users():
 @api_bp.route("/users/<user_id>", methods=["PUT"])
 def update_user_route(user_id):
     """Update a user (admin only)"""
-    if session.get("user_role") != "admin":
+    user_role = get_current_user_role()
+    if user_role != "admin":
         return jsonify({"message": "Unauthorized"}), 403
 
     data = request.get_json() or {}
@@ -416,9 +455,37 @@ def update_user_route(user_id):
 @api_bp.route("/users/<user_id>", methods=["DELETE"])
 def delete_user_route(user_id):
     """Delete a user (admin only)"""
-    if session.get("user_role") != "admin":
+    user_role = get_current_user_role()
+    if user_role != "admin":
         return jsonify({"message": "Unauthorized"}), 403
 
     if delete_user(user_id):
         return jsonify({"message": "User deleted successfully"})
     return jsonify({"message": "User not found"}), 404
+
+
+# ---------- SAMPLE PROTECTED ENDPOINT WITH JWT ----------
+
+@api_bp.route("/profile", methods=["GET"])
+@jwt_required()
+def get_profile():
+    """Sample protected endpoint using JWT authentication only"""
+    try:
+        user_id = get_jwt_identity()
+        if not user_id:
+            return jsonify({"message": "Invalid token"}), 401
+        
+        from models.users_model import get_user_by_id
+        user = get_user_by_id(user_id)
+        if user:
+            return jsonify({
+                "user_id": str(user["_id"]),
+                "email": user["email"],
+                "first_name": user.get("first_name"),
+                "last_name": user.get("last_name"),
+                "role": user.get("role")
+            })
+        return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        logging.error(f"Profile error: {str(e)}")
+        return jsonify({"message": "Error retrieving profile"}), 500

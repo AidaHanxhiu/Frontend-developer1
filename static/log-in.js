@@ -32,6 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
           messageEl.textContent = data.message;
           messageEl.style.color = "green";
   
+          // Store JWT token in localStorage
+          if (data.access_token) {
+            localStorage.setItem("access_token", data.access_token);
+          }
+  
           // redirect based on role
           if (data.role === "admin") {
             window.location.href = "/admin";

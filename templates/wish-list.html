@@ -100,9 +100,26 @@
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  // Helper function to get JWT token from localStorage
+  function getAuthToken() {
+    return localStorage.getItem("access_token");
+  }
+  
+  // Helper function to create headers with JWT token
+  function getAuthHeaders() {
+    const token = getAuthToken();
+    const headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = "Bearer " + token;
+    }
+    return headers;
+  }
+  
   // Load wishlist
   function loadWishlist() {
-    fetch("/api/wishlist")
+    fetch("/api/wishlist", {
+      headers: getAuthHeaders()
+    })
       .then(res => res.json())
       .then(data => {
         displayWishlist(data.wishlist || []);
@@ -156,7 +173,8 @@ document.addEventListener("DOMContentLoaded", function() {
   
   window.removeFromWishlist = function(bookId) {
     fetch(`/api/wishlist/${bookId}`, {
-      method: "DELETE"
+      method: "DELETE",
+      headers: getAuthHeaders()
     })
     .then(res => res.json())
     .then(data => {
@@ -178,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     fetch("/api/requests", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ book_title: bookTitle, author, reason })
     })
     .then(res => res.json())
@@ -195,7 +213,8 @@ document.addEventListener("DOMContentLoaded", function() {
   window.deleteRequest = function(requestId) {
     if (confirm("Are you sure you want to cancel this request?")) {
       fetch(`/api/requests/${requestId}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: getAuthHeaders()
       })
       .then(res => res.json())
       .then(data => {
