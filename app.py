@@ -1,8 +1,13 @@
+import os
+import logging
 from flask import Flask
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager
 from routes.routes_pages import pages_bp
 from routes.routes_api import api_bp
+
+# Reduce verbose pymongo logging
+logging.getLogger("pymongo").setLevel(logging.WARNING)
 
 app = Flask(__name__)
 app.secret_key = "supersecret123"  # required for sessions
@@ -24,43 +29,46 @@ mongo = PyMongo(app)
 # ENSURE REQUIRED COLLECTIONS EXIST
 # ------------------------------
 # This block runs at startup to explicitly create collections and seed an example document.
-with app.app_context():
-    db = mongo.db
+try:
+    with app.app_context():
+        db = mongo.db
 
-    # Create collections if they do not exist
-    for collection_name in ["publishers", "reviews", "reservations"]:
-        try:
-            db.create_collection(collection_name)
-        except Exception:
-            # Collection already exists; ignore
-            pass
+        # Create collections if they do not exist
+        for collection_name in ["publishers", "reviews", "reservations"]:
+            try:
+                db.create_collection(collection_name)
+            except Exception:
+                # Collection already exists; ignore
+                pass
 
-    # Seed sample documents if they are not already present
-    if db.publishers.count_documents({"publisher_id": 1}) == 0:
-        db.publishers.insert_one({
-            "publisher_id": 1,
-            "name": "Penguin",
-            "country": "USA",
-            "yearFounded": 1927
-        })
+        # Seed sample documents if they are not already present
+        if db.publishers.count_documents({"publisher_id": 1}) == 0:
+            db.publishers.insert_one({
+                "publisher_id": 1,
+                "name": "Penguin",
+                "country": "USA",
+                "yearFounded": 1927
+            })
 
-    if db.reviews.count_documents({"review_id": 1}) == 0:
-        db.reviews.insert_one({
-            "review_id": 1,
-            "book_id": 1,
-            "user_id": 1,
-            "rating": 5,
-            "comment": "Great book!"
-        })
+        if db.reviews.count_documents({"review_id": 1}) == 0:
+            db.reviews.insert_one({
+                "review_id": 1,
+                "book_id": 1,
+                "user_id": 1,
+                "rating": 5,
+                "comment": "Great book!"
+            })
 
-    if db.reservations.count_documents({"reservation_id": 1}) == 0:
-        db.reservations.insert_one({
-            "reservation_id": 1,
-            "book_id": 1,
-            "user_id": 1,
-            "reservedDate": "2025-01-10",
-            "status": "pending"
-        })
+        if db.reservations.count_documents({"reservation_id": 1}) == 0:
+            db.reservations.insert_one({
+                "reservation_id": 1,
+                "book_id": 1,
+                "user_id": 1,
+                "reservedDate": "2025-01-10",
+                "status": "pending"
+            })
+except Exception as e:
+    print("MongoDB connection failed; skipping database initialization:", e)
 
 # register blueprints
 app.register_blueprint(pages_bp)
@@ -68,4 +76,5 @@ app.register_blueprint(api_bp)
 
 # run app
 if __name__ == "__main__":
-    app.run(debug=True)
+    PORT = int(os.getenv("PORT", 5000))
+    app.run(host="0.0.0.0", port=PORT, debug=True)
