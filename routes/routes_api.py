@@ -12,7 +12,17 @@ from models.books_model import (
     search_books, get_available_books, get_books_by_genre, get_books_by_language
 )
 from models.loans_model import (
-    create_loan, get_user_loans, get_active_loans, return_loan, delete_loan
+    create_loan,
+    get_user_loans,
+    get_active_loans,
+    return_loan,
+    delete_loan,
+    create_reservation,
+    get_all_reservations,
+    get_reservation_by_id,
+    get_user_reservations,
+    update_reservation,
+    delete_reservation,
 )
 from models.requests_model import (
     create_request, get_user_requests, get_all_requests, update_request_status, delete_request
@@ -21,10 +31,23 @@ from models.wishlist_model import (
     add_to_wishlist, get_user_wishlist, remove_from_wishlist, is_in_wishlist
 )
 from models.reviews_model import (
-    create_review, get_book_reviews, get_book_rating, delete_review
+    create_review,
+    get_all_reviews,
+    get_review_by_id,
+    get_book_reviews,
+    get_book_rating,
+    update_review,
+    delete_review,
 )
 from models.genres_model import get_all_genres, create_genre
-from models.authors_model import get_all_authors
+from models.authors_model import (
+    get_all_authors,
+    create_publisher,
+    get_all_publishers,
+    get_publisher_by_id,
+    update_publisher,
+    delete_publisher,
+)
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -321,6 +344,126 @@ def remove_from_wishlist_route(book_id):
     return jsonify({"message": "Not found"}), 404
 
 
+# ---------- PUBLISHERS ROUTES (NEW CLASS) ----------
+
+@api_bp.route("/publishers", methods=["GET"])
+def get_publishers():
+    """Get all publishers"""
+    publishers = get_all_publishers()
+    return jsonify({"publishers": serialize_doc(publishers)})
+
+
+@api_bp.route("/publishers/<publisher_id>", methods=["GET"])
+def get_publisher(publisher_id):
+    """Get a single publisher by ID"""
+    publisher = get_publisher_by_id(publisher_id)
+    if publisher:
+        return jsonify(serialize_doc(publisher))
+    return jsonify({"message": "Publisher not found"}), 404
+
+
+@api_bp.route("/publishers", methods=["POST"])
+def add_publisher():
+    """Create a new publisher (admin only)"""
+    user_role = get_current_user_role()
+    if user_role != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    data = request.get_json() or {}
+    try:
+        publisher = create_publisher(data)
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
+    return jsonify(serialize_doc(publisher)), 201
+
+
+@api_bp.route("/publishers/<publisher_id>", methods=["PUT"])
+def update_publisher_route(publisher_id):
+    """Update a publisher (admin only)"""
+    user_role = get_current_user_role()
+    if user_role != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    data = request.get_json() or {}
+    if update_publisher(publisher_id, data):
+        publisher = get_publisher_by_id(publisher_id)
+        return jsonify(serialize_doc(publisher))
+    return jsonify({"message": "Publisher not found"}), 404
+
+
+@api_bp.route("/publishers/<publisher_id>", methods=["DELETE"])
+def delete_publisher_route(publisher_id):
+    """Delete a publisher (admin only)"""
+    user_role = get_current_user_role()
+    if user_role != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    if delete_publisher(publisher_id):
+        return jsonify({"message": "Publisher deleted successfully"})
+    return jsonify({"message": "Publisher not found"}), 404
+
+
+# ---------- RESERVATIONS ROUTES (NEW CLASS) ----------
+
+@api_bp.route("/reservations", methods=["GET"])
+def get_reservations():
+    """Get user's reservations or all reservations (admin)"""
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"message": "Not authenticated"}), 401
+
+    user_role = get_current_user_role()
+    if user_role == "admin":
+        reservations = get_all_reservations()
+    else:
+        reservations = get_user_reservations(user_id)
+
+    return jsonify({"reservations": serialize_doc(reservations)})
+
+
+@api_bp.route("/reservations", methods=["POST"])
+def create_reservation_route():
+    """Create a reservation for a book"""
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"message": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+    book_id = data.get("book_id")
+    if not book_id:
+        return jsonify({"message": "Book ID required"}), 400
+
+    reservation = create_reservation(user_id, book_id)
+    return jsonify(serialize_doc(reservation)), 201
+
+
+@api_bp.route("/reservations/<reservation_id>", methods=["PUT"])
+def update_reservation_route(reservation_id):
+    """Update reservation (admin only)"""
+    user_role = get_current_user_role()
+    if user_role != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    data = request.get_json() or {}
+    if update_reservation(reservation_id, data):
+        reservation = get_reservation_by_id(reservation_id)
+        return jsonify(serialize_doc(reservation))
+    return jsonify({"message": "Reservation not found"}), 404
+
+
+@api_bp.route("/reservations/<reservation_id>", methods=["DELETE"])
+def delete_reservation_route(reservation_id):
+    """Delete a reservation"""
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"message": "Not authenticated"}), 401
+
+    if delete_reservation(reservation_id):
+        return jsonify({"message": "Reservation deleted successfully"})
+    return jsonify({"message": "Reservation not found"}), 404
+
+
 # ---------- REQUESTS ROUTES ----------
 
 @api_bp.route("/requests", methods=["GET"])
@@ -397,6 +540,54 @@ def add_review(book_id):
 
     review = create_review(user_id, book_id, rating, comment)
     return jsonify(serialize_doc(review)), 201
+
+
+@api_bp.route("/reviews", methods=["GET"])
+def list_reviews():
+    """Get all reviews"""
+    reviews = get_all_reviews()
+    return jsonify({"reviews": serialize_doc(reviews)})
+
+
+@api_bp.route("/reviews/<review_id>", methods=["GET"])
+def get_review(review_id):
+    """Get a single review by ID"""
+    review = get_review_by_id(review_id)
+    if review:
+        return jsonify(serialize_doc(review))
+    return jsonify({"message": "Review not found"}), 404
+
+
+@api_bp.route("/reviews/<review_id>", methods=["PUT"])
+def update_review_route(review_id):
+    """Update a review"""
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"message": "Not authenticated"}), 401
+
+    data = request.get_json() or {}
+    rating = data.get("rating")
+    comment = data.get("comment")
+
+    if rating is not None and not (1 <= rating <= 5):
+        return jsonify({"message": "Rating must be between 1 and 5"}), 400
+
+    if update_review(review_id, rating=rating, comment=comment):
+        review = get_review_by_id(review_id)
+        return jsonify(serialize_doc(review))
+    return jsonify({"message": "Review not found"}), 404
+
+
+@api_bp.route("/reviews/<review_id>", methods=["DELETE"])
+def delete_review_route(review_id):
+    """Delete a review"""
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"message": "Not authenticated"}), 401
+
+    if delete_review(review_id):
+        return jsonify({"message": "Review deleted successfully"})
+    return jsonify({"message": "Review not found"}), 404
 
 
 # ---------- GENRES ROUTES ----------

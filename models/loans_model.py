@@ -111,3 +111,68 @@ def delete_loan(loan_id):
     except:
         return False
 
+
+# ---------- RESERVATIONS (NEW CLASS) ----------
+# TODO: adjust fields (status workflow, dates) as needed.
+def create_reservation(user_id, book_id, status="pending"):
+    """Create a new reservation"""
+    db = get_db()
+
+    reservation = {
+        "user_id": ObjectId(user_id),
+        "book_id": ObjectId(book_id),
+        "reserved_date": datetime.utcnow(),
+        "status": status
+    }
+
+    result = db.reservations.insert_one(reservation)
+    reservation["_id"] = result.inserted_id
+    return reservation
+
+
+def get_all_reservations():
+    """Get all reservations"""
+    db = get_db()
+    return list(db.reservations.find({}))
+
+
+def get_reservation_by_id(reservation_id):
+    """Get reservation by ID"""
+    db = get_db()
+    try:
+        return db.reservations.find_one({"_id": ObjectId(reservation_id)})
+    except:
+        return None
+
+
+def get_user_reservations(user_id):
+    """Get all reservations for a user"""
+    db = get_db()
+    try:
+        return list(db.reservations.find({"user_id": ObjectId(user_id)}))
+    except:
+        return []
+
+
+def update_reservation(reservation_id, update_data):
+    """Update reservation information"""
+    db = get_db()
+    try:
+        result = db.reservations.update_one(
+            {"_id": ObjectId(reservation_id)},
+            {"$set": update_data}
+        )
+        return result.modified_count > 0
+    except:
+        return False
+
+
+def delete_reservation(reservation_id):
+    """Delete a reservation"""
+    db = get_db()
+    try:
+        result = db.reservations.delete_one({"_id": ObjectId(reservation_id)})
+        return result.deleted_count > 0
+    except:
+        return False
+

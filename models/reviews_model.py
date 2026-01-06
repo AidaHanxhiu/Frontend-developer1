@@ -47,6 +47,21 @@ def create_review(user_id, book_id, rating, comment=None):
 
 
 # ---------- READ ----------
+def get_all_reviews():
+    """Get all reviews"""
+    db = get_db()
+    return list(db.reviews.find({}))
+
+
+def get_review_by_id(review_id):
+    """Get single review by ID"""
+    db = get_db()
+    try:
+        return db.reviews.find_one({"_id": ObjectId(review_id)})
+    except:
+        return None
+
+
 def get_book_reviews(book_id):
     """Get all reviews for a book"""
     db = get_db()
