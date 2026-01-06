@@ -76,5 +76,10 @@ app.register_blueprint(api_bp)
 
 # run app
 if __name__ == "__main__":
-    PORT = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=PORT, debug=True)
+    import os
+    port = int(os.getenv("PORT", 5001))
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=True
+    )
