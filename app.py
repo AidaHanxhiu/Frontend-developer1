@@ -3,8 +3,12 @@ import logging
 from flask import Flask
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager
+from dotenv import load_dotenv
 from routes.routes_pages import pages_bp
 from routes.routes_api import api_bp
+
+# Load environment variables
+load_dotenv()
 
 # Reduce verbose pymongo logging
 logging.getLogger("pymongo").setLevel(logging.WARNING)
@@ -22,7 +26,12 @@ jwt = JWTManager(app)
 # ------------------------------
 # MONGODB CONNECTION
 # ------------------------------
-app.config["MONGO_URI"] = "mongodb://localhost:27017/librarydb"
+mongodb_uri = os.getenv("MONGODB_URI")
+if not mongodb_uri:
+    raise ValueError("MONGODB_URI environment variable is not set. Please check your .env file.")
+# Remove quotes if present
+mongodb_uri = mongodb_uri.strip().strip('"').strip("'")
+app.config["MONGO_URI"] = mongodb_uri
 mongo = PyMongo(app)
 
 # ------------------------------
