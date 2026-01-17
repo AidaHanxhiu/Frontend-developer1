@@ -12,7 +12,7 @@
 
 <form id="login-form" class="login-form">
     <label for="email">Email</label>
-    <input type="email" id="email" name="email" placeholder="admin@library.com" required>
+    <input type="email" id="email" name="email" placeholder="Enter your email" required>
 
     <label for="password">Password</label>
     <input type="password" id="password" name="password" placeholder="Enter your password" required>
@@ -30,12 +30,6 @@
     Don't have an account?
     <a href="{{ url_for('pages.sign_up') }}">Sign up</a>
 </p>
-
-<div style="margin-top: 15px;">
-    <strong>Demo Credentials:</strong><br>
-    Admin: admin@library.com / admin123<br>
-    Student: john@example.com / student123
-</div>
 
 {% endblock %}
 

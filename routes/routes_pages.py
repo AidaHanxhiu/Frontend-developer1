@@ -119,8 +119,7 @@ def wish_list():
     """Wishlist page"""
     user_id = session.get("user_id")
     wishlist = get_user_wishlist(user_id)
-    requests = get_user_requests(user_id)
-    return render_template("wish-list.html", wishlist=wishlist, requests=requests)
+    return render_template("wish-list.html", wishlist=wishlist)
 
 
 @pages_bp.route("/my-requests")

@@ -237,3 +237,4 @@ The application uses Flask sessions for authentication:
 ## License
 
 This project is for educational purposes.
+# Minor update for final submission

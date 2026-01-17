@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Wishlist & Requests{% endblock %}
+{% block title %}My Wishlist{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='wish-list.css') }}">
@@ -12,87 +12,6 @@
 
 <div class="row" id="wishGrid">
   <!-- Wishlist items will be loaded here -->
-</div>
-
-<h2 class="mt-5 mb-4">My Book Requests</h2>
-
-<div class="card">
-  <div class="card-header">
-    <h5 class="mb-0">Request a New Book</h5>
-  </div>
-  <div class="card-body">
-    <form id="requestForm">
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label for="bookTitle" class="form-label">Book Title *</label>
-          <input type="text" class="form-control" id="bookTitle" required>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label for="author" class="form-label">Author</label>
-          <input type="text" class="form-control" id="author">
-        </div>
-      </div>
-      <div class="mb-3">
-        <label for="reason" class="form-label">Reason for Request</label>
-        <textarea class="form-control" id="reason" rows="3"></textarea>
-      </div>
-      <button type="submit" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Submit Request
-      </button>
-    </form>
-  </div>
-</div>
-
-<div class="card mt-4">
-  <div class="card-header">
-    <h5 class="mb-0">My Requests</h5>
-  </div>
-  <div class="card-body">
-    <div id="requestsList">
-      {% if requests %}
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Book Title</th>
-              <th>Author</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for request in requests %}
-            <tr>
-              <td>{{ request.book_title }}</td>
-              <td>{{ request.author or 'N/A' }}</td>
-              <td>
-                {% if request.status == 'pending' %}
-                <span class="badge bg-warning text-dark">Pending</span>
-                {% elif request.status == 'approved' %}
-                <span class="badge bg-success">Approved</span>
-                {% else %}
-                <span class="badge bg-danger">Rejected</span>
-                {% endif %}
-              </td>
-              <td>{{ request.created_at.strftime('%Y-%m-%d') if request.created_at else 'N/A' }}</td>
-              <td>
-                {% if request.status == 'pending' %}
-                <button class="btn btn-sm btn-danger" onclick="deleteRequest('{{ request._id }}')">
-                  <i class="bi bi-trash"></i> Cancel
-                </button>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="text-muted">No requests yet. Submit a request above to get started!</p>
-      {% endif %}
-    </div>
-  </div>
 </div>
 
 {% endblock %}
@@ -185,47 +104,6 @@ document.addEventListener("DOMContentLoaded", function() {
       alert("Error removing from wishlist");
       console.error(err);
     });
-  };
-  
-  // Request form
-  document.getElementById("requestForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const bookTitle = document.getElementById("bookTitle").value;
-    const author = document.getElementById("author").value;
-    const reason = document.getElementById("reason").value;
-    
-    fetch("/api/requests", {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ book_title: bookTitle, author, reason })
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert("Request submitted successfully!");
-      location.reload();
-    })
-    .catch(err => {
-      alert("Error submitting request");
-      console.error(err);
-    });
-  });
-  
-  window.deleteRequest = function(requestId) {
-    if (confirm("Are you sure you want to cancel this request?")) {
-      fetch(`/api/requests/${requestId}`, {
-        method: "DELETE",
-        headers: getAuthHeaders()
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert("Request cancelled");
-        location.reload();
-      })
-      .catch(err => {
-        alert("Error cancelling request");
-        console.error(err);
-      });
-    }
   };
   
   loadWishlist();

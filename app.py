@@ -1,4 +1,10 @@
 import os
+import sys
+
+# Prevent Python from creating .pyc files and __pycache__ directories
+os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+sys.dont_write_bytecode = True
+
 import logging
 from flask import Flask
 from flask_pymongo import PyMongo
@@ -28,7 +34,7 @@ mongo = PyMongo(app)
 # ------------------------------
 # ENSURE REQUIRED COLLECTIONS EXIST
 # ------------------------------
-# This block runs at startup to explicitly create collections and seed an example document.
+# Initialize collections and seed sample documents at application startup.
 try:
     with app.app_context():
         db = mongo.db
@@ -68,9 +74,9 @@ try:
                 "status": "pending"
             })
 except Exception as e:
-    print("MongoDB connection failed; skipping database initialization:", e)
+    pass  # MongoDB connection failed; skipping database initialization
 
-# register blueprints
+# Register application blueprints
 app.register_blueprint(pages_bp)
 app.register_blueprint(api_bp)
 
@@ -78,8 +84,4 @@ app.register_blueprint(api_bp)
 if __name__ == "__main__":
     import os
     port = int(os.getenv("PORT", 5001))
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=True
-    )
+    app.run(debug=True, port=port)
