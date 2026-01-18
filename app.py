@@ -93,4 +93,8 @@ app.register_blueprint(api_bp)
 if __name__ == "__main__":
     import os
     port = int(os.getenv("PORT", 5001))
-    app.run(debug=True, port=port)
+    try:
+        app.run(debug=True, port=port)
+    except OSError:
+        # Port is busy, try next port
+        app.run(debug=True, port=port + 1)
