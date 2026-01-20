@@ -53,22 +53,56 @@ def get_loan_by_id(loan_id):
 
 
 def get_user_loans(user_id):
-    """Get all loans for a user"""
+    """Get all loans for a user, joined with book details using $lookup"""
     db = get_db()
     try:
-        return list(db.loans.find({"user_id": ObjectId(user_id)}))
+        pipeline = [
+            {"$match": {"user_id": ObjectId(user_id)}},
+            {
+                "$lookup": {
+                    "from": "books",
+                    "localField": "book_id",
+                    "foreignField": "_id",
+                    "as": "book"
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$book",
+                    "preserveNullAndEmptyArrays": True
+                }
+            }
+        ]
+        return list(db.loans.aggregate(pipeline))
     except:
         return []
 
 
 def get_active_loans(user_id):
-    """Get active loans for a user"""
+    """Get active loans for a user, joined with book details using $lookup"""
     db = get_db()
     try:
-        return list(db.loans.find({
-            "user_id": ObjectId(user_id),
-            "status": "active"
-        }))
+        pipeline = [
+            {"$match": {
+                "user_id": ObjectId(user_id),
+                "status": "active"
+            }},
+            {
+                "$lookup": {
+                    "from": "books",
+                    "localField": "book_id",
+                    "foreignField": "_id",
+                    "as": "book"
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$book",
+                    "preserveNullAndEmptyArrays": True
+                }
+            }
+        ]
+        return list(db.loans.aggregate(pipeline))
     except:
         return []
 

@@ -44,15 +44,18 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     loansList.innerHTML = loans.map(loan => {
-      const borrowedDate = new Date(loan.borrowed_date).toLocaleDateString();
-      const dueDate = new Date(loan.due_date).toLocaleDateString();
-      const isOverdue = new Date(loan.due_date) < new Date() && loan.status === "active";
+      const borrowedDate = loan.borrowed_date ? new Date(loan.borrowed_date).toLocaleDateString() : 'N/A';
+      const dueDate = loan.due_date ? new Date(loan.due_date).toLocaleDateString() : 'N/A';
+      const isOverdue = loan.due_date && new Date(loan.due_date) < new Date() && loan.status === "active";
+      const bookTitle = loan.book && loan.book.title ? loan.book.title : 'Unknown Book';
+      const bookAuthor = loan.book && loan.book.author ? loan.book.author : 'Unknown Author';
       
       return `
         <div class="col-md-6 mb-3">
           <div class="card ${isOverdue ? 'border-danger' : ''}">
             <div class="card-body">
-              <h5 class="card-title">Loan #${loan._id.substring(0, 8)}</h5>
+              <h5 class="card-title">${bookTitle}</h5>
+              <p class="card-text"><strong>Author:</strong> ${bookAuthor}</p>
               <p class="card-text"><strong>Borrowed:</strong> ${borrowedDate}</p>
               <p class="card-text"><strong>Due Date:</strong> ${dueDate}</p>
               <span class="badge ${loan.status === 'active' ? 'bg-primary' : 'bg-success'}">
