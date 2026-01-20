@@ -231,6 +231,41 @@ def get_loans():
         return jsonify({"message": "Server error"}), 500
 
 
+@api_bp.route("/loans", methods=["POST"])
+def create_user_loan():
+    """
+    Create a new loan for the currently logged-in user.
+    Used by the Borrow Book page (borrow.html) via POST /api/loans.
+    """
+    user_id = get_current_user_id()
+
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        data = request.get_json() or {}
+        book_id = data.get("book_id")
+
+        if not book_id:
+            return jsonify({"message": "book_id is required"}), 400
+
+        # Ensure book exists and is available
+        book = get_book_by_id(book_id)
+        if not book:
+            return jsonify({"message": "Book not found"}), 404
+        if not book.get("available", True):
+            return jsonify({"message": "Book is not available"}), 400
+
+        # Create loan and mark book as unavailable
+        loan = create_loan(user_id, book_id)
+        update_book(book_id, {"available": False})
+
+        return jsonify({"message": "Loan created", "loan": serialize_doc(loan)}), 201
+    except Exception as e:
+        logging.error(f"Error creating loan: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
 @api_bp.route("/loans/<loan_id>/return", methods=["POST"])
 def api_return_loan(loan_id):
     """
