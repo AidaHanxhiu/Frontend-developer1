@@ -2,17 +2,16 @@
 Database initialization script
 Run this script to initialize the database with sample data
 """
-from app import get_db
 from models.users_model import create_user
-from models.books_model import create_book
+from models.books_model import create_book, get_db
 from models.genres_model import create_genre
 from models.authors_model import create_author
+from models.loans_model import create_loan
 
 def init_database():
     """Initialize database with sample data"""
-    db = get_db()
-    
     print("Initializing database...")
+    db = get_db()
     
     # Create sample genres
     print("Creating genres...")
@@ -96,11 +95,138 @@ def init_database():
             "genre": "Mystery",
             "language": "English",
             "available": True
+        },
+        {
+            "title": "To Kill a Mockingbird",
+            "author": "Harper Lee",
+            "year": 1960,
+            "isbn": "978-0061120084",
+            "description": "A novel about racial injustice in the Deep South",
+            "genre": "Fiction",
+            "language": "English",
+            "available": True
+        },
+        {
+            "title": "The Great Gatsby",
+            "author": "F. Scott Fitzgerald",
+            "year": 1925,
+            "isbn": "978-0743273565",
+            "description": "A story of the Jazz Age in 1920s America",
+            "genre": "Fiction",
+            "language": "English",
+            "available": True
+        },
+        {
+            "title": "One Hundred Years of Solitude",
+            "author": "Gabriel García Márquez",
+            "year": 1967,
+            "isbn": "978-0060883287",
+            "description": "A landmark of magical realism set in Macondo",
+            "genre": "Fantasy",
+            "language": "Spanish",
+            "available": True
+        },
+        {
+            "title": "The Hobbit",
+            "author": "J.R.R. Tolkien",
+            "year": 1937,
+            "isbn": "978-0547928227",
+            "description": "Bilbo Baggins' adventure to the Lonely Mountain",
+            "genre": "Fantasy",
+            "language": "English",
+            "available": True
+        },
+        {
+            "title": "The Catcher in the Rye",
+            "author": "J.D. Salinger",
+            "year": 1951,
+            "isbn": "978-0316769488",
+            "description": "Holden Caulfield's story of teenage alienation",
+            "genre": "Fiction",
+            "language": "English",
+            "available": False
+        },
+        {
+            "title": "The Alchemist",
+            "author": "Paulo Coelho",
+            "year": 1988,
+            "isbn": "978-0061122415",
+            "description": "A shepherd's journey to find his personal legend",
+            "genre": "Fantasy",
+            "language": "Portuguese",
+            "available": True
+        },
+        {
+            "title": "The Little Prince",
+            "author": "Antoine de Saint-Exupéry",
+            "year": 1943,
+            "isbn": "978-0156012195",
+            "description": "A poetic tale of loneliness, friendship, and love",
+            "genre": "Fantasy",
+            "language": "French",
+            "available": True
+        },
+        {
+            "title": "Sapiens: A Brief History of Humankind",
+            "author": "Yuval Noah Harari",
+            "year": 2011,
+            "isbn": "978-0062316110",
+            "description": "A narrative of human history and evolution",
+            "genre": "Non-Fiction",
+            "language": "English",
+            "available": True
+        },
+        {
+            "title": "The Name of the Rose",
+            "author": "Umberto Eco",
+            "year": 1980,
+            "isbn": "978-0156001311",
+            "description": "A historical mystery set in an Italian monastery",
+            "genre": "Mystery",
+            "language": "Italian",
+            "available": False
+        },
+        {
+            "title": "Don Quixote",
+            "author": "Miguel de Cervantes",
+            "year": 1605,
+            "isbn": "978-0060934346",
+            "description": "The adventures of a man who becomes a knight-errant",
+            "genre": "Fiction",
+            "language": "Spanish",
+            "available": True
         }
     ]
     
+    # Insert only new books; keep existing ones untouched
+    created_books = []
+    existing_isbns = set(
+        b.get("isbn")
+        for b in db.books.find({}, {"isbn": 1})
+        if b.get("isbn")
+    )
+
     for book_data in sample_books:
-        create_book(book_data)
+        isbn = book_data.get("isbn")
+        title = book_data.get("title")
+
+        # Skip if a book with the same ISBN already exists
+        if isbn and isbn in existing_isbns:
+            continue
+
+        # Fallback: if no ISBN, skip if a book with same title already exists
+        if not isbn and title and db.books.find_one({"title": title}):
+            continue
+
+        created = create_book(book_data)
+        created_books.append(created)
+
+    # Create sample loans for the student user
+    if student and created_books:
+        print("Creating sample loans for student user...")
+        # Borrow a few books for the demo student
+        for book in created_books[:3]:
+            create_loan(str(student["_id"]), str(book["_id"]))
     
     print("\nDatabase initialization complete!")
     print("\nSample credentials:")

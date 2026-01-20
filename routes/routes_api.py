@@ -324,17 +324,103 @@ def remove_wishlist_item(book_id):
 
 # ---------- BOOKS ROUTES (READ-ONLY FOR WISHLIST) ----------
 
-@api_bp.route("/books/<book_id>", methods=["GET"])
-def api_get_book(book_id):
+@api_bp.route("/books", methods=["GET"])
+def api_get_books():
     """
-    Get single book details.
-    Used by the My Wishlist page to render each wishlist item.
+    Get books list with optional filters.
+    Used by All Books and Search pages.
     """
     try:
-        book = get_book_by_id(book_id)
-        if not book:
+        available = request.args.get("available")
+        search = request.args.get("search", "").strip()
+        genre = request.args.get("genre", "").strip()
+        language = request.args.get("language", "").strip()
+
+        # Preserve existing model logic; just choose the right query helper
+        if search:
+            books = search_books(search)
+        elif genre:
+            books = get_books_by_genre(genre)
+        elif language:
+            books = get_books_by_language(language)
+        elif available == "true":
+            books = get_available_books()
+        else:
+            books = get_all_books()
+
+        return jsonify({"books": [serialize_doc(b) for b in books]})
+    except Exception as e:
+        logging.error(f"Error fetching books: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+@api_bp.route("/books", methods=["POST"])
+def api_create_book():
+    """
+    Create a new book.
+    Used by Admin Add Book form.
+    """
+    try:
+        data = request.get_json() or {}
+        book = create_book(data)
+        return jsonify({"message": "Book created", "book": serialize_doc(book)})
+    except Exception as e:
+        logging.error(f"Error creating book: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+@api_bp.route("/books/<book_id>", methods=["GET", "PUT", "DELETE"])
+def api_book_detail(book_id):
+    """
+    Get single book details.
+    Also supports update/delete for Admin.
+    """
+    try:
+        if request.method == "GET":
+            book = get_book_by_id(book_id)
+            if not book:
+                return jsonify({"message": "Book not found"}), 404
+            return jsonify(serialize_doc(book))
+
+        if request.method == "PUT":
+            data = request.get_json() or {}
+            success = update_book(book_id, data)
+            if success:
+                return jsonify({"message": "Book updated"})
             return jsonify({"message": "Book not found"}), 404
-        return jsonify(serialize_doc(book))
+
+        if request.method == "DELETE":
+            success = delete_book(book_id)
+            if success:
+                return jsonify({"message": "Book deleted"})
+            return jsonify({"message": "Book not found"}), 404
+
+        return jsonify({"message": "Method not allowed"}), 405
     except Exception as e:
         logging.error(f"Error fetching book %s: %s", book_id, str(e))
+        return jsonify({"message": "Server error"}), 500
+
+
+@api_bp.route("/books/<book_id>/reviews", methods=["POST"])
+def api_create_book_review(book_id):
+    """
+    Create or update a review for a book by the current user.
+    Used by book_details.html review form.
+    """
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        data = request.get_json() or {}
+        rating = data.get("rating")
+        comment = data.get("comment")
+
+        if rating is None:
+            return jsonify({"message": "rating is required"}), 400
+
+        review = create_review(user_id, book_id, rating, comment)
+        return jsonify({"message": "Review saved", "review": serialize_doc(review)})
+    except Exception as e:
+        logging.error(f"Error creating review for book %s: %s", book_id, str(e))
         return jsonify({"message": "Server error"}), 500
