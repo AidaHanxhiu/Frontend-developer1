@@ -28,4 +28,3 @@ def add_book(data):
     data["id"] = new_id
     books.append(data)
     return data
-

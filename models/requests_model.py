@@ -84,4 +84,3 @@ def delete_request(request_id):
         return result.deleted_count > 0
     except:
         return False
-

@@ -118,4 +118,3 @@ def verify_user(email, password):
         user.pop("password")
         return user
     return None
-

@@ -175,4 +175,3 @@ def delete_reservation(reservation_id):
         return result.deleted_count > 0
     except:
         return False
-

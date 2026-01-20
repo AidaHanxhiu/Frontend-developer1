@@ -122,4 +122,3 @@ def delete_review(review_id):
         return result.deleted_count > 0
     except:
         return False
-

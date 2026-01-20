@@ -76,4 +76,3 @@ def remove_from_wishlist(user_id, book_id):
         return result.deleted_count > 0
     except:
         return False
-

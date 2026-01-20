@@ -207,3 +207,134 @@ def signup():
     except Exception as e:
         logging.error(f"Signup error: {str(e)}")
         return jsonify({"message": "Server error"}), 500
+
+
+# ---------- LOANS ROUTES ----------
+
+@api_bp.route("/loans", methods=["GET"])
+def get_loans():
+    """
+    Get all loans for the currently logged-in user
+    (used by the My Books / My Borrowed Books page)
+    """
+    user_id = get_current_user_id()
+
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        loans = get_user_loans(user_id)
+        loans_serialized = [serialize_doc(loan) for loan in loans]
+        return jsonify({"loans": loans_serialized})
+    except Exception as e:
+        logging.error(f"Error fetching user loans: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+@api_bp.route("/loans/<loan_id>/return", methods=["POST"])
+def api_return_loan(loan_id):
+    """
+    Mark a loan as returned for the current user
+    (used by the Return Book button on My Books page)
+    """
+    user_id = get_current_user_id()
+
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        success = return_loan(loan_id)
+        if success:
+            return jsonify({"message": "Book returned successfully"})
+        else:
+            return jsonify({"message": "Loan not found"}), 404
+    except Exception as e:
+        logging.error(f"Error returning loan %s: %s", loan_id, str(e))
+        return jsonify({"message": "Server error"}), 500
+
+
+# ---------- WISHLIST ROUTES ----------
+
+@api_bp.route("/wishlist", methods=["GET"])
+def get_wishlist():
+    """
+    Get wishlist items for the currently logged-in user.
+    Used by the My Wishlist page (wish-list.html).
+    """
+    user_id = get_current_user_id()
+
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        wishlist = get_user_wishlist(user_id)
+        wishlist_serialized = [serialize_doc(item) for item in wishlist]
+        return jsonify({"wishlist": wishlist_serialized})
+    except Exception as e:
+        logging.error(f"Error fetching user wishlist: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+@api_bp.route("/wishlist", methods=["POST"])
+def add_wishlist_item():
+    """
+    Add a book to the current user's wishlist.
+    Used by the wishlist button on the book details page.
+    """
+    user_id = get_current_user_id()
+
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    book_id = data.get("book_id")
+
+    if not book_id:
+        return jsonify({"message": "book_id is required"}), 400
+
+    try:
+        item = add_to_wishlist(user_id, book_id)
+        return jsonify({"message": "Added to wishlist", "item": serialize_doc(item)})
+    except Exception as e:
+        logging.error(f"Error adding to wishlist: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+@api_bp.route("/wishlist/<book_id>", methods=["DELETE"])
+def remove_wishlist_item(book_id):
+    """
+    Remove a book from the current user's wishlist.
+    Used by both the wishlist page and the book details page.
+    """
+    user_id = get_current_user_id()
+
+    if not user_id:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    try:
+        success = remove_from_wishlist(user_id, book_id)
+        if success:
+            return jsonify({"message": "Removed from wishlist"})
+        else:
+            return jsonify({"message": "Item not found"}), 404
+    except Exception as e:
+        logging.error(f"Error removing from wishlist: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+# ---------- BOOKS ROUTES (READ-ONLY FOR WISHLIST) ----------
+
+@api_bp.route("/books/<book_id>", methods=["GET"])
+def api_get_book(book_id):
+    """
+    Get single book details.
+    Used by the My Wishlist page to render each wishlist item.
+    """
+    try:
+        book = get_book_by_id(book_id)
+        if not book:
+            return jsonify({"message": "Book not found"}), 404
+        return jsonify(serialize_doc(book))
+    except Exception as e:
+        logging.error(f"Error fetching book %s: %s", book_id, str(e))
+        return jsonify({"message": "Server error"}), 500

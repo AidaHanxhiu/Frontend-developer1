@@ -148,4 +148,3 @@ def delete_author(author_id):
         return result.deleted_count > 0
     except:
         return False
-
