@@ -234,6 +234,49 @@ The application uses Flask sessions for authentication:
 - Image upload for book covers
 - Export functionality for reports
 
+## Team
+
+### Author
+**Anela Beqiri** - Full Stack Developer
+
+### Roles and Contributions
+This project was developed individually with the following responsibilities:
+
+- **Backend Development** (Flask & Python)
+  - Implemented Flask application with Blueprint architecture
+  - Created 40+ RESTful API endpoints
+  - Developed JWT-based authentication and authorization system
+  - Implemented role-based access control (Admin/Student)
+
+- **Database Design & Management** (MongoDB)
+  - Designed and implemented 10 MongoDB collections
+  - Created full CRUD operations for all collections (Authors, Books, Genres, Loans, Users, Wishlist, Requests, Reviews, Publishers, Reservations)
+  - Implemented database initialization and seeding scripts
+  - Configured MongoDB connection with environment variables
+
+- **Frontend Development** (HTML, CSS, Bootstrap)
+  - Created 12+ responsive HTML pages using Jinja2 templates
+  - Implemented Bootstrap 5.3 UI with 10+ components (Navbar, Cards, Forms, Modals, Tables, Badges, Buttons, Alerts, Grid, Dropdowns)
+  - Designed mobile-first responsive layouts
+  - Created custom CSS for enhanced user experience
+
+- **JavaScript Development**
+  - Implemented interactive features (Wishlist management, Book requests, Form submissions)
+  - Created AJAX requests using Fetch API
+  - Developed client-side form validation
+  - Implemented JWT token management with localStorage
+  - Built dynamic DOM manipulation for real-time updates
+
+- **Testing & Documentation**
+  - Wrote comprehensive README with setup instructions
+  - Created inline code documentation and docstrings
+  - Developed test credentials and testing procedures
+  - Documented all API endpoints
+
+**Project Type:** Individual University Project  
+**Course:** [Add your course name/code here]  
+**Institution:** [Add your university name here]
+
 ## License
 
 This project is for educational purposes.
