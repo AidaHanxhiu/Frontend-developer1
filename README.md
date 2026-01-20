@@ -236,11 +236,12 @@ The application uses Flask sessions for authentication:
 
 ## Team
 
-### Author
-**Anela Beqiri** - Full Stack Developer
+### Team Members
+- **Anila Beqiri** - Full Stack Developer
+- **Aida Hanxhiu** - Full Stack Developer
 
 ### Roles and Contributions
-This project was developed individually with the following responsibilities:
+This project was developed as a group project with the following responsibilities:
 
 - **Backend Development** (Flask & Python)
   - Implemented Flask application with Blueprint architecture
@@ -273,9 +274,9 @@ This project was developed individually with the following responsibilities:
   - Developed test credentials and testing procedures
   - Documented all API endpoints
 
-**Project Type:** Individual University Project  
-**Course:** [Add your course name/code here]  
-**Institution:** [Add your university name here]
+**Project Type:** Group Project  
+**Course:** Fundamentals of Web and App Development  
+**Institution:** Modul University Vienna
 
 ## License
 
