@@ -1,6 +1,6 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def get_db():
@@ -118,3 +118,70 @@ def verify_user(email, password):
         user.pop("password")
         return user
     return None
+
+
+# ---------- PASSWORD RESET ----------
+# Function to create a secure password reset token for a user
+# Token expires in 1 hour and is stored in password_reset_tokens collection
+def create_password_reset_token(user_id):
+    """Create a password reset token for a user"""
+    import secrets
+    db = get_db()
+    
+    # Generate a secure random token using secrets module (cryptographically secure)
+    token = secrets.token_urlsafe(32)
+    
+    # Token expires in 1 hour from now
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+    
+    # Store token in password_reset_tokens collection
+    # This links the token to the user and tracks expiration
+    db.password_reset_tokens.insert_one({
+        "user_id": ObjectId(user_id),
+        "token": token,
+        "expires_at": expires_at,
+        "used": False,  # Track if token has been used (prevents reuse)
+        "created_at": datetime.utcnow()
+    })
+    
+    return token
+
+
+# Function to verify if a reset token is valid (not expired and not used)
+def verify_reset_token(token):
+    """Verify if a reset token is valid and not expired"""
+    db = get_db()
+    
+    # Find token in database that hasn't been used yet
+    token_doc = db.password_reset_tokens.find_one({
+        "token": token,
+        "used": False
+    })
+    
+    # If token not found, return None
+    if not token_doc:
+        return None
+    
+    # Check if token has expired (current time is past expiration time)
+    if datetime.utcnow() > token_doc["expires_at"]:
+        return None
+    
+    # Token is valid - return the token document with user_id
+    return token_doc
+
+
+# Function to mark a reset token as used (invalidate it)
+# This prevents the same token from being used multiple times
+def invalidate_reset_token(token):
+    """Mark a reset token as used (invalidate it)"""
+    db = get_db()
+    try:
+        # Update token document to mark it as used
+        result = db.password_reset_tokens.update_one(
+            {"token": token},
+            {"$set": {"used": True}}
+        )
+        # Return True if token was successfully invalidated
+        return result.modified_count > 0
+    except:
+        return False

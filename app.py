@@ -49,7 +49,7 @@ try:
         db = mongo.db
 
         # Create collections if they do not exist
-        for collection_name in ["publishers", "reviews", "reservations"]:
+        for collection_name in ["publishers", "reviews", "reservations", "password_reset_tokens"]:
             try:
                 db.create_collection(collection_name)
             except Exception:

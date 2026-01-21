@@ -66,6 +66,22 @@ def forgot_password():
     return render_template("forgot-password.html")
 
 
+@pages_bp.route("/reset-password/<token>")
+def reset_password_page(token):
+    """Reset password page with token verification"""
+    # Import password reset functions
+    from models.users_model import verify_reset_token
+    
+    # Verify token is valid (not expired and not used)
+    token_doc = verify_reset_token(token)
+    if not token_doc:
+        # Token is invalid - show error message
+        return render_template("reset-password.html", valid_token=False, token=token)
+    
+    # Token is valid - show password reset form
+    return render_template("reset-password.html", valid_token=True, token=token)
+
+
 @pages_bp.route("/logout")
 def logout():
     """Logout route"""

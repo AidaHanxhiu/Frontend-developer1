@@ -1,5 +1,6 @@
 # ---------- IMPORTS ----------
 import logging
+import sys
 from flask import Blueprint, jsonify, request, session, current_app
 from flask_jwt_extended import (
     create_access_token,
@@ -18,7 +19,11 @@ from models.users_model import (
     create_user,
     get_all_users,
     update_user,
-    delete_user
+    delete_user,
+    create_password_reset_token,
+    verify_reset_token,
+    invalidate_reset_token,
+    update_user_password
 )
 
 # Book-related database operations
@@ -206,6 +211,108 @@ def signup():
         })
     except Exception as e:
         logging.error(f"Signup error: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+# ---------- PASSWORD RESET ROUTES ----------
+
+# POST /api/forgot-password - Generate password reset token (demo mode)
+# This endpoint generates a secure token and prints the reset link in console
+@api_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    """
+    Generate password reset token and print reset link in console (demo mode).
+    Used by the Forgot Password page.
+    """
+    try:
+        # Get email from request body
+        data = request.get_json() or {}
+        email = data.get("email")
+
+        # Validate that email is provided
+        if not email:
+            return jsonify({"message": "Email is required"}), 400
+
+        # Check if user exists in database
+        user = get_user_by_email(email)
+        if not user:
+            # Return success even if user doesn't exist (security: prevents email enumeration)
+            # This way attackers can't tell which emails are registered
+            return jsonify({"message": "If that email exists, a reset link has been sent"})
+
+        # Generate secure reset token (expires in 1 hour)
+        # Token is stored in password_reset_tokens collection
+        reset_token = create_password_reset_token(str(user["_id"]))
+
+        # Create the reset link that user will visit
+        reset_link = f"http://127.0.0.1:5001/reset-password/{reset_token}"
+
+        # Print reset link in server console (demo mode - no real email sent)
+        print("\n" + "="*60)
+        print("PASSWORD RESET LINK (DEMO MODE)")
+        print("="*60)
+        print(f"User: {email}")
+        print(f"Reset Link: {reset_link}")
+        print(f"Token expires in: 1 hour")
+        print("="*60 + "\n")
+        sys.stdout.flush()
+
+        # Return success message (same message whether user exists or not)
+        return jsonify({
+            "message": "If that email exists, a reset link has been sent. Check the server console (terminal) for the demo reset link."
+        })
+
+    except Exception as e:
+        # Log error and return server error response
+        logging.error(f"Error processing forgot password: {str(e)}")
+        return jsonify({"message": "Server error"}), 500
+
+
+# POST /api/reset-password - Reset user password using token
+# This endpoint verifies the token and updates the user's password
+@api_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    """
+    Reset user password using reset token.
+    Used by the Reset Password page.
+    """
+    try:
+        # Get token and new password from request body
+        data = request.get_json() or {}
+        token = data.get("token")
+        new_password = data.get("new_password")
+
+        # Validate that both token and password are provided
+        if not token or not new_password:
+            return jsonify({"message": "Token and new password are required"}), 400
+
+        # Validate password meets minimum length requirement
+        if len(new_password) < 6:
+            return jsonify({"message": "Password must be at least 6 characters"}), 400
+
+        # Verify token is valid (not expired and not used)
+        token_doc = verify_reset_token(token)
+        if not token_doc:
+            # Token is invalid, expired, or already used
+            return jsonify({"message": "Invalid or expired reset token"}), 400
+
+        # Get user ID from the token document
+        user_id = str(token_doc["user_id"])
+
+        # Update user password in database (password is hashed before storage)
+        success = update_user_password(user_id, new_password)
+        if not success:
+            return jsonify({"message": "Failed to update password"}), 500
+
+        # Invalidate token so it cannot be reused (mark as used)
+        invalidate_reset_token(token)
+
+        # Return success message
+        return jsonify({"message": "Password reset successfully"})
+
+    except Exception as e:
+        # Log error and return server error response
+        logging.error(f"Error resetting password: {str(e)}")
         return jsonify({"message": "Server error"}), 500
 
 
