@@ -63,29 +63,45 @@
 document.addEventListener("DOMContentLoaded", function() {
   let currentFilter = "all";
   
+  // Function to load books from the API
+  // This function fetches books from the backend and displays them
+  // It supports filtering by availability, search term, genre, and language
   function loadBooks(filter = "all", search = "", genre = "", lang = "") {
+    // Build the API URL with query parameters
     let url = "/api/books?";
+    // If filter is "available", only fetch books where available=True
+    // This is used by the "Available Only" tab
     if (filter === "available") url += "available=true&";
     if (search) url += `search=${encodeURIComponent(search)}&`;
     if (genre) url += `genre=${encodeURIComponent(genre)}&`;
     if (lang) url += `language=${encodeURIComponent(lang)}&`;
     
+    // Fetch books from the backend API
+    // The API returns a JSON object with a "books" array
+    // Each book object contains: _id, title, author, year, genre, available, etc.
     fetch(url)
       .then(res => res.json())
       .then(data => {
+        // Pass the books array to displayBooks() to render them in the grid
+        // The books array contains the latest data from the database
+        // This includes the current value of book.available for each book
         displayBooks(data.books || []);
       })
       .catch(err => console.error("Error:", err));
   }
   
+  // Function to display books in the grid
+  // This function takes the list of books from the API and renders them as HTML cards
   function displayBooks(books) {
     const grid = document.getElementById("booksGrid");
     
+    // If no books found, show a message
     if (books.length === 0) {
       grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No books found.</div></div>';
       return;
     }
     
+    // Map each book to an HTML card and join them together
     grid.innerHTML = books.map(book => `
       <div class="col-md-4 mb-4">
         <div class="card h-100">
@@ -94,6 +110,13 @@ document.addEventListener("DOMContentLoaded", function() {
             <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p>
             <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p>
             <p class="card-text"><strong>Genre:</strong> ${book.genre || 'N/A'}</p>
+            <!-- HOW THE STATUS BADGE IS DETERMINED -->
+            <!-- The badge shows "Available" or "Borrowed" based on book.available field -->
+            <!-- book.available is a boolean: true = Available, false = Borrowed -->
+            <!-- This field is the source of truth - it's updated when books are borrowed/returned -->
+            <!-- When a book is borrowed: backend sets available=False, badge shows "Borrowed" -->
+            <!-- When a book is returned: backend sets available=True, badge shows "Available" -->
+            <!-- The badge color also changes: green (bg-success) for Available, gray (bg-secondary) for Borrowed -->
             <span class="badge ${book.available ? 'bg-success' : 'bg-secondary'}">
               ${book.available ? 'Available' : 'Borrowed'}
             </span>
@@ -128,11 +151,25 @@ document.addEventListener("DOMContentLoaded", function() {
     loadBooks(currentFilter);
   });
   
-  // Load initial books
+  // Load initial books when the page first loads
   loadBooks();
   
-  // Listen for book returned event to refresh the list
+  // WHY REFRESHING THE BOOK LIST IS NECESSARY:
+  // When a user returns a book on the "My Books" page, the backend updates:
+  // 1. The loan status (marks it as returned)
+  // 2. The book's available field (sets it to True)
+  // However, the All Books page has already loaded the old data (with available=False)
+  // Without refreshing, the page would still show "Borrowed" even though the book is now available
+  // 
+  // HOW THE REFRESH WORKS:
+  // When a book is returned, my-books.html dispatches a 'bookReturned' custom event
+  // This event listener catches that event and automatically calls loadBooks()
+  // loadBooks() fetches fresh data from the API, which now has available=True
+  // displayBooks() then re-renders the grid with the updated status badges
+  // This ensures the UI stays in sync with the database without requiring a manual page refresh
   window.addEventListener('bookReturned', function() {
+    // Reload books with the current filter settings
+    // This fetches fresh data from the API and updates the status badges
     loadBooks(currentFilter);
   });
 });

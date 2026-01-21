@@ -73,23 +73,41 @@ document.addEventListener("DOMContentLoaded", function() {
     }).join('');
   }
   
+  // Frontend return book function
+  // This function is called when the user clicks the "Return Book" button
   window.returnBook = function(loanId) {
+    // Step 1: Confirm with the user before proceeding
+    // The confirm() dialog asks "Are you sure?" to prevent accidental returns
+    // Only proceed if the user clicks "OK" (returns true)
     if (confirm("Are you sure you want to return this book?")) {
+      // Step 2: Send a POST request to the backend API
+      // The loanId tells the backend which loan to mark as returned
+      // The backend will update both the loan status AND the book's availability
       fetch(`/api/loans/${loanId}/return`, {
         method: "POST"
       })
       .then(res => res.json())
       .then(data => {
+        // Step 3: After successful return, update the UI
+        // Show a success message to the user
         alert("Book returned successfully!");
+        // Refresh the "My Loans" page to show the updated loan list
+        // This removes the returned book from the active loans display
         loadLoans();
-        // Dispatch custom event to notify All Books page to refresh
+        // Step 4: Notify other pages that a book was returned
+        // Dispatch a custom event that the All Books page listens to
+        // This allows All Books to automatically refresh and show the book as "Available"
+        // Without this, All Books would still show "Borrowed" until the user manually refreshes
         window.dispatchEvent(new CustomEvent('bookReturned'));
       })
       .catch(err => {
+        // If the API call fails, show an error message
         alert("Error returning book");
         console.error(err);
       });
     }
+    // If user clicks "Cancel" in the confirm dialog, nothing happens
+    // The function exits and no API call is made
   };
   
   loadLoans();

@@ -1,3 +1,12 @@
+# This file contains all the page routes (routes that render HTML templates)
+# Page routes are different from API routes:
+# - Page routes: Return HTML pages (e.g., /all-books returns all-books.html)
+# - API routes: Return JSON data (e.g., /api/books returns book data)
+# 
+# When a user visits a URL like /all-books, Flask finds the matching route here
+# The route function fetches data from the database and passes it to the HTML template
+# The template then renders the data into HTML that the user sees in their browser
+
 from flask import Blueprint, render_template, session, redirect, url_for, request
 from models.books_model import get_all_books, get_book_by_id, get_available_books, search_books, get_books_by_genre
 from models.loans_model import get_user_loans, get_active_loans
@@ -6,6 +15,9 @@ from models.requests_model import get_user_requests
 from models.genres_model import get_all_genres
 from models.reviews_model import get_book_reviews, get_book_rating
 
+# Create a Blueprint to organize page routes
+# Blueprints help organize code by grouping related routes together
+# All routes in this file are part of the "pages" blueprint
 pages_bp = Blueprint(
     "pages",
     __name__,
@@ -14,23 +26,40 @@ pages_bp = Blueprint(
 )
 
 
+# DECORATOR: require_login
+# This decorator protects routes that require the user to be logged in
+# When applied to a route function, it checks if user_id exists in the session
+# If not logged in, redirects to login page; otherwise allows access to the route
+# Example: @require_login means only logged-in users can access that page
 def require_login(f):
     """Decorator to require login"""
     def decorated_function(*args, **kwargs):
+        # Check if user is logged in by looking for user_id in session
+        # Session stores user information after successful login
         if "user_id" not in session:
+            # Not logged in - redirect to login page
             return redirect(url_for("pages.log_in"))
+        # Logged in - allow access to the route
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
 
 
+# DECORATOR: require_admin
+# This decorator protects routes that only admins can access
+# It checks both: 1) user is logged in, 2) user has admin role
+# Used for admin-only pages like the admin panel
 def require_admin(f):
     """Decorator to require admin role"""
     def decorated_function(*args, **kwargs):
+        # First check if user is logged in
         if "user_id" not in session:
             return redirect(url_for("pages.log_in"))
+        # Then check if user has admin role
+        # Regular users are redirected to all-books page
         if session.get("user_role") != "admin":
             return redirect(url_for("pages.all_books"))
+        # User is admin - allow access
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
@@ -106,12 +135,22 @@ def dashboard():
 
 # ---------- USER DASHBOARD ROUTES ----------
 
+# ROUTE: /my-books
+# This page shows all books that the logged-in user has borrowed
+# It displays both active loans (currently borrowed) and returned loans (history)
+# The page uses JavaScript to fetch loan data from /api/loans and display it
 @pages_bp.route("/my-books")
-@require_login
+@require_login  # Only logged-in users can access this page
 def my_books():
     """My borrowed books page"""
+    # Get the current user's ID from the session (set during login)
     user_id = session.get("user_id")
+    # Fetch all loans for this user from the database
+    # get_user_loans() uses $lookup to join loans with books collection
+    # This gives us book title, author, etc. along with loan details
     loans = get_user_loans(user_id)
+    # Pass the loans data to the template
+    # The template's JavaScript will fetch from /api/loans to display them
     return render_template("my-books.html", loans=loans)
 
 
@@ -149,11 +188,21 @@ def my_requests():
 
 # ---------- BROWSING ROUTES ----------
 
+# ROUTE: /all-books
+# This is the main catalog page where users can browse all books in the library
+# It shows all books with their availability status (Available/Borrowed)
+# Users can filter by availability, search, genre, or language
+# The page uses JavaScript to fetch books from /api/books and display them dynamically
 @pages_bp.route("/all-books")
 def all_books():
     """All books page"""
+    # Fetch all books from the database (used for initial page load)
+    # The JavaScript on the page will fetch from /api/books for filtering/searching
     books = get_all_books()
+    # Get all genres for the filter dropdown
     genres = get_all_genres()
+    # Pass books and genres to the template
+    # The template uses JavaScript to fetch updated book data from the API
     return render_template("all-books.html", books=books, genres=genres)
 
 
@@ -166,6 +215,10 @@ def search():
     return render_template("search.html", books=books, query=query, genres=genres)
 
 
+# ROUTE: /book/<book_id>
+# This page shows detailed information about a specific book
+# Users can view book details, check availability, borrow the book, add to wishlist, and see reviews
+# The book_id comes from the URL (e.g., /book/12345)
 @pages_bp.route("/book/<book_id>")
 def book_details(book_id):
     """Book details page"""

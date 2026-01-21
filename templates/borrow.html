@@ -8,16 +8,24 @@
 
 {% block content %}
 
+<!-- BORROW BOOK PAGE -->
+<!-- This page is shown when a user clicks "Borrow Book" on the book details page -->
+<!-- It displays the book information and a confirmation form to borrow the book -->
+<!-- The page checks book.available to determine if the book can be borrowed -->
+
 <div class="row justify-content-center">
   <div class="col-md-8">
     <h1 class="mb-4">Borrow Book</h1>
     
+    <!-- Display book information -->
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title">{{ book.title }}</h5>
         <p class="card-text"><strong>Author:</strong> {{ book.author }}</p>
         <p class="card-text"><strong>Year:</strong> {{ book.year }}</p>
         <p class="card-text"><strong>Genre:</strong> <span class="badge bg-primary">{{ book.genre }}</span></p>
+        <!-- Display availability status badge -->
+        <!-- The badge color and text depend on book.available field from the database -->
         {% if book.available %}
         <span class="badge bg-success">Available</span>
         {% else %}
@@ -26,13 +34,18 @@
       </div>
     </div>
     
+    <!-- Only show borrow form if book is available -->
+    <!-- This prevents users from trying to borrow books that are already borrowed -->
     {% if book.available %}
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">Borrowing Information</h5>
         <p class="card-text">You are about to borrow this book. The loan period is 14 days.</p>
         
+        <!-- Borrow confirmation form -->
+        <!-- When user clicks "Confirm Borrow", JavaScript sends a POST request to /api/loans -->
         <form id="borrowForm">
+          <!-- Store book ID in a hidden field so JavaScript can send it to the API -->
           <input type="hidden" id="bookId" value="{{ book._id }}">
           <div class="alert alert-info">
             <i class="bi bi-info-circle"></i> Please confirm that you want to borrow this book.
@@ -45,6 +58,8 @@
       </div>
     </div>
     {% else %}
+    <!-- If book is not available, show warning message -->
+    <!-- This happens when someone else has already borrowed the book -->
     <div class="alert alert-warning">
       <i class="bi bi-exclamation-triangle"></i> This book is currently not available for borrowing.
     </div>
@@ -57,29 +72,49 @@
 
 {% block extra_js %}
 <script>
+// JavaScript code that runs when the page loads
+// This handles the borrow form submission and communicates with the backend API
 document.addEventListener("DOMContentLoaded", function() {
+  // Get the borrow form element
   const borrowForm = document.getElementById("borrowForm");
   if (borrowForm) {
+    // Listen for form submission (when user clicks "Confirm Borrow")
     borrowForm.addEventListener("submit", function(e) {
+      // Prevent the default form submission (which would reload the page)
+      // We want to handle it with JavaScript instead
       e.preventDefault();
+      
+      // Get the book ID from the hidden input field
+      // This tells the backend which book to borrow
       const bookId = document.getElementById("bookId").value;
       
+      // Send a POST request to the backend API to create a loan
+      // The API endpoint is /api/loans (defined in routes_api.py)
+      // This request creates a loan record and updates the book's availability
       fetch("/api/loans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // Send the book_id in the request body
+        // The backend uses this to create the loan and mark the book as unavailable
         body: JSON.stringify({ book_id: bookId })
       })
       .then(res => {
+        // Check if the response was successful (status 200-299)
         if (res.ok) {
           return res.json();
         }
+        // If not successful, parse error message and reject the promise
         return res.json().then(data => Promise.reject(data));
       })
       .then(data => {
+        // If borrow was successful, show success message
         alert("Book borrowed successfully!");
+        // Redirect user to "My Books" page to see their borrowed books
+        // The backend has already updated the book's available field to False
         window.location.href = "/my-books";
       })
       .catch(err => {
+        // If there was an error (book not available, server error, etc.)
         alert("Error connecting to server");
         console.error(err);
       });

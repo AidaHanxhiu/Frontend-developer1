@@ -344,6 +344,18 @@ def create_user_loan():
     """
     Create a new loan for the currently logged-in user.
     Used by the Borrow Book page (borrow.html) via POST /api/loans.
+    
+    This endpoint handles the borrow flow:
+    1. Validates the user is logged in
+    2. Checks the book exists and is available
+    3. Creates a loan record in the database
+    4. Updates the book's availability flag to False
+    
+    The book's 'available' field is the source of truth for the UI.
+    When a book is borrowed, we set available=False so that:
+    - All Books page shows "Borrowed" badge
+    - Book Details page shows "Currently Borrowed"
+    - Other users cannot borrow the same book
     """
     user_id = get_current_user_id()
 
@@ -351,6 +363,7 @@ def create_user_loan():
         return jsonify({"message": "Unauthorized"}), 401
 
     try:
+        # Get the book_id from the request body (sent by the frontend)
         data = request.get_json() or {}
         book_id = data.get("book_id")
 
@@ -358,14 +371,23 @@ def create_user_loan():
             return jsonify({"message": "book_id is required"}), 400
 
         # Ensure book exists and is available
+        # We check availability BEFORE creating the loan to prevent double-borrowing
         book = get_book_by_id(book_id)
         if not book:
             return jsonify({"message": "Book not found"}), 404
+        # The 'available' field determines if a book can be borrowed
+        # If available=False, the book is already borrowed by someone else
         if not book.get("available", True):
             return jsonify({"message": "Book is not available"}), 400
 
         # Create loan and mark book as unavailable
+        # Step 1: Create a loan record in the loans collection
+        # This stores who borrowed what book and when
         loan = create_loan(user_id, book_id)
+        # Step 2: Update the book's availability flag to False
+        # This is critical: the book.available field is what the UI checks
+        # to display "Available" vs "Borrowed" status on All Books page
+        # Without this update, the book would still show as available even though it's borrowed
         update_book(book_id, {"available": False})
 
         return jsonify({"message": "Loan created", "loan": serialize_doc(loan)}), 201
@@ -379,6 +401,29 @@ def api_return_loan(loan_id):
     """
     Mark a loan as returned for the current user
     (used by the Return Book button on My Books page)
+    
+    This endpoint handles the return flow:
+    1. Validates the user is logged in
+    2. Fetches the loan to get the book_id (we need this to update the book)
+    3. Marks the loan as returned (sets status="returned" and returned_date)
+    4. Updates the book's availability flag to True
+    
+    WHY WE FETCH THE LOAN FIRST:
+    - The loan document contains the book_id that was borrowed
+    - We need the book_id to update the book's availability
+    - We fetch it BEFORE marking as returned to ensure we have the book_id
+    
+    WHY WE UPDATE BOTH THE LOAN AND THE BOOK:
+    - The loan record tracks borrowing history (who borrowed what, when, returned when)
+    - The book's 'available' field is the source of truth for the UI status display
+    - If we only update the loan, the book would still show as "Borrowed" on All Books
+    - If we only update the book, we'd lose the return date in the loan history
+    
+    HOW THIS PREVENTS RETURNED BOOKS FROM STAYING MARKED AS BORROWED:
+    - When a book is borrowed, available=False
+    - When returned, we set available=True
+    - All Books page checks book.available to show "Available" vs "Borrowed" badge
+    - Without updating available=True, the book would permanently show as "Borrowed"
     """
     user_id = get_current_user_id()
 
@@ -387,15 +432,26 @@ def api_return_loan(loan_id):
 
     try:
         # Get the loan to extract book_id before returning it
+        # We need to fetch the loan document first because it contains the book_id
+        # The book_id tells us which book to mark as available again
+        # We do this BEFORE updating the loan status to ensure we have the book_id
         loan = get_loan_by_id(loan_id)
         if not loan:
             return jsonify({"message": "Loan not found"}), 404
 
         # Mark the loan as returned
+        # This updates the loan record: sets status="returned" and returned_date=now
+        # This preserves the borrowing history in the database
         success = return_loan(loan_id)
         if success:
             # Update the book's availability to True so it shows as Available in All Books
+            # This is the critical step that fixes the bug:
+            # Without this, the book would still show "Borrowed" on All Books page
+            # The book.available field is what the UI checks to display the status badge
+            # We extract the book_id from the loan document we fetched earlier
             book_id = str(loan["book_id"])
+            # Set available=True so the book appears as "Available" on All Books page
+            # This makes the book borrowable again by other users
             update_book(book_id, {"available": True})
             return jsonify({"message": "Book returned successfully"})
         else:
