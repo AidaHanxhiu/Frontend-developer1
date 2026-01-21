@@ -44,6 +44,7 @@ from models.loans_model import (
     create_loan,
     get_user_loans,
     get_active_loans,
+    get_loan_by_id,
     return_loan,
     delete_loan,
     create_reservation,
@@ -385,8 +386,17 @@ def api_return_loan(loan_id):
         return jsonify({"message": "Unauthorized"}), 401
 
     try:
+        # Get the loan to extract book_id before returning it
+        loan = get_loan_by_id(loan_id)
+        if not loan:
+            return jsonify({"message": "Loan not found"}), 404
+
+        # Mark the loan as returned
         success = return_loan(loan_id)
         if success:
+            # Update the book's availability to True so it shows as Available in All Books
+            book_id = str(loan["book_id"])
+            update_book(book_id, {"available": True})
             return jsonify({"message": "Book returned successfully"})
         else:
             return jsonify({"message": "Loan not found"}), 404

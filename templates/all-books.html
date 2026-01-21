@@ -130,6 +130,11 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Load initial books
   loadBooks();
+  
+  // Listen for book returned event to refresh the list
+  window.addEventListener('bookReturned', function() {
+    loadBooks(currentFilter);
+  });
 });
 </script>
 {% endblock %}

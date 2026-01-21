@@ -83,6 +83,8 @@ document.addEventListener("DOMContentLoaded", function() {
       .then(data => {
         alert("Book returned successfully!");
         loadLoans();
+        // Dispatch custom event to notify All Books page to refresh
+        window.dispatchEvent(new CustomEvent('bookReturned'));
       })
       .catch(err => {
         alert("Error returning book");
