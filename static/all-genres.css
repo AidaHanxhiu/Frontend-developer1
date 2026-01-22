@@ -1,7 +1,7 @@
-body { background:#f8f9fa; font-family:"Segoe UI", Arial, sans-serif; }
+body { background:#598fc5; font-family:"Segoe UI", Arial, sans-serif; }
 h1 { color:#212529; }
 .genre-card { border:none; border-radius:10px; transition:transform .2s; }
 .genre-card:hover { transform:scale(1.03); }
-.btn-dark { background:#212529; border:none; }
+.btn-dark { background:#446b92; border:none; }
 .btn-dark:hover { background:#000; }
 footer { font-size:.9rem; }

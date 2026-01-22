@@ -11,11 +11,11 @@ body {
     align-items: center;
     padding: 15px 30px;
     background: #1f2937;
-    color: white;
+    color: rgb(100, 42, 42);
 }
 
 .navbar a {
-    color: #d1d5db;
+    color: #2c3b51;
     margin: 0 10px;
     text-decoration: none;
 }
@@ -36,7 +36,7 @@ body {
 .container {
     max-width: 900px;
     margin: 40px auto;
-    background: white;
+    background: rgb(202, 100, 100);
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);

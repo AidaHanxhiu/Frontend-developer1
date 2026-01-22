@@ -1,6 +1,6 @@
 /* General styling */
 body {
-  background-color: #f8f9fa;
+  background-color: #500f91;
   font-family: "Segoe UI", Arial, sans-serif;
   color: #212529;
 }
@@ -14,8 +14,8 @@ h1 {
 .shared-card {
   border: none;
   border-radius: 12px;
-  background-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background-color: #591616;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.499);
   transition: transform 0.2s ease-in-out;
 }
 .shared-card:hover {
@@ -36,12 +36,12 @@ h1 {
   font-weight: 500;
 }
 .btn-dark:hover {
-  background-color: #000;
+  background-color: #9e252597;
 }
 
 /* Footer */
 footer {
   font-size: 0.9rem;
   background-color: #f1f3f5;
-  color: #212529;
+  color: #3e79b4;
 }

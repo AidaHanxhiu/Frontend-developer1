@@ -7,7 +7,7 @@
 .signup-form input {
     padding: 8px;
     border-radius: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid #e33b3b;
 }
 
 .checkbox {
@@ -19,7 +19,7 @@
 button {
     margin-top: 15px;
     padding: 10px;
-    background: #fbbf24;
+    background: #dda823;
     border: none;
     border-radius: 5px;
     cursor: pointer;

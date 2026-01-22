@@ -63,17 +63,17 @@
            1. Book is available (book.available is True)
            2. User is logged in (session.user_id exists)
            This prevents borrowing unavailable books and requires login -->
-      {% if book.available and session.user_id %}
+      {% if book.available and session.get('user_id') %}
       <a href="{{ url_for('pages.borrow', book_id=book._id) }}" class="btn btn-primary">
         <i class="bi bi-book"></i> Borrow Book
       </a>
       {% endif %}
       <!-- Wishlist button - shown to all logged-in users -->
       <!-- The button text and icon change based on whether book is already in wishlist -->
-      {% if session.user_id %}
+      {% if session.get('user_id') %}
       <button type="button" class="btn btn-outline-danger" id="wishlistBtn" data-book-id="{{ book._id }}">
-        <i class="bi bi-heart{{ '' if in_wishlist else '-fill' }}"></i> 
-        <span id="wishlistText">{{ 'Remove from' if in_wishlist else 'Add to' }} Wishlist</span>
+        <i class="bi bi-heart{{ '-fill' if (in_wishlist|default(false)) else '' }}"></i> 
+        <span id="wishlistText">{{ 'Remove from' if (in_wishlist|default(false)) else 'Add to' }} Wishlist</span>
       </button>
       {% endif %}
     </div>
@@ -89,7 +89,7 @@
         </div>
       </div>
       <div class="card-body">
-        {% if session.user_id %}
+        {% if session.get('user_id') %}
         <form id="reviewForm" class="mb-4">
           <div class="mb-3">
             <label for="rating" class="form-label">Rating</label>
@@ -162,15 +162,16 @@
 // This includes adding/removing from wishlist and submitting reviews
 document.addEventListener("DOMContentLoaded", function() {
   // Get the book ID from the template (passed from backend)
-  const bookId = "{{ book._id }}";
+  const bookId = {{ book._id|string|tojson }};
   
   // WISHLIST TOGGLE FUNCTIONALITY
   // When user clicks the wishlist button, add or remove the book from their wishlist
   const wishlistBtn = document.getElementById("wishlistBtn");
   if (wishlistBtn) {
+    // Check if book is currently in wishlist (from backend template variable)
+    let isInWishlist = {{ (in_wishlist|default(false))|tojson }};
+    
     wishlistBtn.addEventListener("click", function() {
-      // Check if book is currently in wishlist (from backend template variable)
-      const isInWishlist = {{ 'true' if in_wishlist else 'false' }};
       // If in wishlist, use DELETE to remove it; otherwise use POST to add it
       const method = isInWishlist ? "DELETE" : "POST";
       // API endpoint depends on action: DELETE uses book_id in URL, POST uses body
@@ -185,9 +186,20 @@ document.addEventListener("DOMContentLoaded", function() {
       })
       .then(res => res.json())
       .then(data => {
-        // Reload page to update the wishlist button state
-        // The backend will recalculate in_wishlist and update the button text/icon
-        location.reload();
+        // Toggle the local state
+        isInWishlist = !isInWishlist;
+        
+        // Update button text
+        const wishlistText = document.getElementById("wishlistText");
+        if (wishlistText) {
+          wishlistText.textContent = isInWishlist ? "Remove from" : "Add to";
+        }
+        
+        // Update button icon
+        const icon = wishlistBtn.querySelector("i");
+        if (icon) {
+          icon.className = isInWishlist ? "bi bi-heart-fill" : "bi bi-heart";
+        }
       })
       .catch(err => console.error("Error:", err));
     });
