@@ -72,8 +72,8 @@
       <!-- The button text and icon change based on whether book is already in wishlist -->
       {% if session.get('user_id') %}
       <button type="button" class="btn btn-outline-danger" id="wishlistBtn" data-book-id="{{ book._id }}">
-        <i class="bi bi-heart{{ '-fill' if (in_wishlist|default(false)) else '' }}"></i> 
-        <span id="wishlistText">{{ 'Remove from' if (in_wishlist|default(false)) else 'Add to' }} Wishlist</span>
+        <i class="bi bi-heart{{ '-fill' if in_wishlist|default(false) else '' }}"></i> 
+        <span id="wishlistText">{{ 'Remove from' if in_wishlist|default(false) else 'Add to' }} Wishlist</span>
       </button>
       {% endif %}
     </div>
@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const wishlistBtn = document.getElementById("wishlistBtn");
   if (wishlistBtn) {
     // Check if book is currently in wishlist (from backend template variable)
-    let isInWishlist = {{ (in_wishlist|default(false))|tojson }};
+    let isInWishlist = {{ in_wishlist|default(false)|tojson }};
     
     wishlistBtn.addEventListener("click", function() {
       // If in wishlist, use DELETE to remove it; otherwise use POST to add it

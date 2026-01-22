@@ -195,3 +195,48 @@ def login():
     except Exception as e:
         logging.error(f"Login error: {str(e)}")
         return jsonify({"message": "Server error"}), 500
+
+# ---------- BOOK ROUTES ----------
+
+@api_bp.route("/books", methods=["GET"])
+def get_books():
+    """
+    Get all books with optional filtering
+    Supports query parameters: available, search, genre, language
+    """
+    try:
+        # Get query parameters
+        available_only = request.args.get("available", "").lower() == "true"
+        search_query = request.args.get("search", "").strip()
+        genre_filter = request.args.get("genre", "").strip()
+        language_filter = request.args.get("language", "").strip()
+
+        # Start with all books or available books
+        if available_only:
+            books = get_available_books()
+        else:
+            books = get_all_books()
+
+        # Apply search filter
+        if search_query:
+            # Filter books by title or author (case-insensitive)
+            books = [b for b in books if 
+                    search_query.lower() in b.get("title", "").lower() or 
+                    search_query.lower() in b.get("author", "").lower()]
+
+        # Apply genre filter
+        if genre_filter:
+            books = [b for b in books if b.get("genre") == genre_filter]
+
+        # Apply language filter
+        if language_filter:
+            books = [b for b in books if b.get("language") == language_filter]
+
+        # Serialize books (convert ObjectId to string)
+        serialized_books = serialize_doc(books)
+
+        return jsonify({"books": serialized_books})
+
+    except Exception as e:
+        logging.error(f"Error fetching books: {str(e)}")
+        return jsonify({"message": "Error fetching books", "books": []}), 500
