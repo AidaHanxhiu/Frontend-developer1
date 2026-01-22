@@ -115,8 +115,9 @@ document.addEventListener("DOMContentLoaded", function() {
       })
       .catch(err => {
         // If there was an error (book not available, server error, etc.)
-        alert("Error connecting to server");
-        console.error(err);
+        const errorMessage = err.message || "Error connecting to server";
+        alert(errorMessage);
+        console.error("Borrow error:", err);
       });
     });
   }

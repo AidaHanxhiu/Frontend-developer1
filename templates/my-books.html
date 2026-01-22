@@ -36,16 +36,38 @@ document.addEventListener("DOMContentLoaded", function() {
     /* Send GET request to retrieve user's loans */
     fetch("/api/loans")
 
-      /* Convert response to JSON */
-      .then(res => res.json())
+      /* Check if response is OK */
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(data => {
+            console.error("API Error:", data);
+            throw new Error(data.message || "Failed to load loans");
+          });
+        }
+        return res.json();
+      })
 
       /* Pass loan data to display function */
       .then(data => {
+        console.log("Loans data received:", data);
         displayLoans(data.loans || []);
       })
 
       /* Log any errors */
-      .catch(err => console.error("Error:", err));
+      .catch(err => {
+        console.error("Error loading loans:", err);
+        // Show error message to user
+        const loansList = document.getElementById("loansList");
+        if (loansList) {
+          loansList.innerHTML = `
+            <div class="col-12">
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> Error loading loans: ${err.message}
+              </div>
+            </div>
+          `;
+        }
+      });
   }
   
   /* Function to display loan cards on the page */

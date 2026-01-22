@@ -29,14 +29,18 @@ def create_loan(user_id, book_id, due_days=14):
     """Create a new loan"""
     db = get_db()
     
+    # Convert to ObjectId if needed
+    user_id_obj = ObjectId(user_id) if not isinstance(user_id, ObjectId) else user_id
+    book_id_obj = ObjectId(book_id) if not isinstance(book_id, ObjectId) else book_id
+    
     # Build the loan document with all required fields
     # A loan connects a user to a book and tracks the borrowing period
     loan = {
         # user_id: Which user borrowed the book (links to users collection)
-        "user_id": ObjectId(user_id),
+        "user_id": user_id_obj,
         # book_id: Which book was borrowed (links to books collection)
         # This is critical - we need this ID to update the book's availability when returning
-        "book_id": ObjectId(book_id),
+        "book_id": book_id_obj,
         # borrowed_date: When the loan started (today)
         "borrowed_date": datetime.utcnow(),
         # due_date: When the book must be returned (default 14 days from now)
@@ -87,10 +91,13 @@ def get_user_loans(user_id):
     """Get all loans for a user, joined with book details using $lookup"""
     db = get_db()
     try:
+        # Convert user_id to ObjectId if needed
+        user_id_obj = ObjectId(user_id) if not isinstance(user_id, ObjectId) else user_id
+        
         # MongoDB aggregation pipeline: a series of operations on the data
         pipeline = [
             # Step 1: Filter to only loans for this user
-            {"$match": {"user_id": ObjectId(user_id)}},
+            {"$match": {"user_id": user_id_obj}},
             # Step 2: Join with books collection to get book details
             # This is like a SQL JOIN: match loan.book_id with book._id
             {
@@ -111,7 +118,9 @@ def get_user_loans(user_id):
             }
         ]
         return list(db.loans.aggregate(pipeline))
-    except:
+    except Exception as e:
+        import logging
+        logging.error(f"Error in get_user_loans: {str(e)}, user_id: {user_id}, type: {type(user_id)}")
         return []
 
 
