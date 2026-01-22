@@ -21,23 +21,38 @@ All endpoints use JSON for request/response and handle errors gracefully.
 
 # ---------- IMPORTS ----------
 # Standard library imports
-import logging                     # Used for logging errors and debug info
-import sys                         # Used to flush stdout for console printing
+# import logging: Python's built-in logging module
+# Used to log errors, warnings, and debug messages to console/file
+import logging
+
+# import sys: Python's system-specific parameters module
+# Used to flush stdout for console printing (ensures output appears immediately)
+import sys
 
 # Flask-related imports
+# Blueprint: Groups related routes together (like a mini Flask app)
+# jsonify: Converts Python dict to JSON HTTP response
+# request: Access HTTP request data (body, headers, query params)
+# session: Store user data across requests (like cookies)
+# current_app: Access the Flask application instance
 from flask import Blueprint, jsonify, request, session, current_app
 
 # JWT authentication utilities
+# JWT (JSON Web Tokens) are used for API authentication
+# They allow clients to prove identity without sending password every time
 from flask_jwt_extended import (
-    create_access_token,          # Create JWT access tokens
-    jwt_required,                 # Protect routes with JWT (not always used)
-    get_jwt_identity,             # Get user ID from JWT
-    verify_jwt_in_request         # Verify JWT optionally
+    create_access_token,          # Function to create JWT tokens (used after login)
+    jwt_required,                 # Decorator to protect routes (require valid JWT)
+    get_jwt_identity,             # Function to get user ID from JWT token
+    verify_jwt_in_request         # Function to verify JWT token exists and is valid
 )
 
 # MongoDB ObjectId handling
+# ObjectId: MongoDB's unique identifier type (not JSON-compatible)
+# We need to convert ObjectIds to strings for JSON responses
 from bson import ObjectId
-from bson.json_util import dumps  # Convert BSON to JSON
+# dumps: Convert MongoDB BSON format to JSON (not used much, we use serialize_doc instead)
+from bson.json_util import dumps
 
 # ---------- MODEL IMPORTS ----------
 # User-related database operations
@@ -126,9 +141,17 @@ from models.authors_model import (
 
 # ---------- API BLUEPRINT ----------
 # Create API blueprint with /api prefix
+# Blueprint groups all API routes together
+# "api": Blueprint name (used in url_for("api.route_name"))
+# __name__: Current module name (routes.routes_api)
+# url_prefix="/api": All routes in this blueprint will be prefixed with /api
+# Example: @api_bp.route("/books") becomes /api/books
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 # Enable debug-level logging
+# logging.basicConfig(): Configure Python's logging system
+# level=logging.DEBUG: Show all log messages (DEBUG, INFO, WARNING, ERROR)
+# This helps debug issues during development
 logging.basicConfig(level=logging.DEBUG)
 
 # ---------- HELPER FUNCTIONS ----------
@@ -146,32 +169,61 @@ def serialize_doc(doc):
         
     Returns:
         Same structure with ObjectIds converted to strings
+    
+    Example:
+        Input: {"_id": ObjectId("123"), "name": "Book"}
+        Output: {"_id": "123", "name": "Book"}
     """
-    # Handle None/null values
+    # Line 1: Handle None/null values
+    # Check if the document is None (null in JSON)
     if doc is None:
-        return None                          # Return None if document is empty
+        # Return None if document is empty (no conversion needed)
+        return None
 
-    # Handle lists - recursively serialize each item
+    # Line 2: Handle lists - recursively serialize each item
+    # isinstance(doc, list) checks if doc is a Python list
     if isinstance(doc, list):
-        return [serialize_doc(item) for item in doc]  # Recursively serialize lists
+        # List comprehension: call serialize_doc() on each item in the list
+        # This handles nested structures like [book1, book2, book3]
+        # Each item is processed recursively
+        return [serialize_doc(item) for item in doc]
 
-    # Handle dictionaries - convert ObjectIds and recurse into nested structures
+    # Line 3: Handle dictionaries - convert ObjectIds and recurse into nested structures
+    # isinstance(doc, dict) checks if doc is a Python dictionary
     if isinstance(doc, dict):
+        # Create empty dictionary to store converted values
         result = {}
+        
+        # Loop through each key-value pair in the dictionary
+        # doc.items() returns list of (key, value) tuples
         for key, value in doc.items():
-            # MongoDB ObjectIds need to be converted to strings for JSON
+            # Line 3a: MongoDB ObjectIds need to be converted to strings for JSON
+            # isinstance(value, ObjectId) checks if value is MongoDB ObjectId type
             if isinstance(value, ObjectId):
-                result[key] = str(value)     # Convert ObjectId to string
-            # Nested lists or dicts need recursive processing
+                # Convert ObjectId to string using str()
+                # Example: ObjectId("507f1f77bcf86cd799439011") → "507f1f77bcf86cd799439011"
+                result[key] = str(value)
+            
+            # Line 3b: Nested lists or dicts need recursive processing
+            # isinstance(value, (list, dict)) checks if value is list OR dict
             elif isinstance(value, (list, dict)):
-                result[key] = serialize_doc(value)  # Recursive conversion
-            # Primitive values (strings, numbers, booleans) can be used as-is
+                # Recursively call serialize_doc() on nested structure
+                # This handles cases like: {"books": [{"_id": ObjectId(...)}, ...]}
+                result[key] = serialize_doc(value)
+            
+            # Line 3c: Primitive values (strings, numbers, booleans) can be used as-is
+            # These don't need conversion - JSON supports them directly
             else:
+                # Copy value as-is (string, int, float, bool, None)
                 result[key] = value
+        
+        # Return the converted dictionary
         return result
 
-    # Primitive values (strings, numbers, booleans) don't need conversion
-    return doc                               # Return primitive values unchanged
+    # Line 4: Primitive values (strings, numbers, booleans) don't need conversion
+    # If doc is not None, list, or dict, it's a primitive value
+    # Return it unchanged (JSON supports strings, numbers, booleans)
+    return doc
 
 
 def get_current_user_id():
@@ -185,26 +237,55 @@ def get_current_user_id():
     
     Returns:
         str: User ID if authenticated, None otherwise
+    
+    How it works:
+    - First tries JWT token (for API clients)
+    - If JWT fails or doesn't exist, falls back to Flask session (for web browsers)
     """
     try:
-        # Try to get user ID from JWT token first (for API authentication)
-        verify_jwt_in_request(optional=True)  # Check JWT if present (doesn't fail if missing)
-        user_id = get_jwt_identity()          # Get user ID from token
+        # Line 1: Try to get user ID from JWT token first (for API authentication)
+        # verify_jwt_in_request(optional=True) checks if JWT token exists in request headers
+        # optional=True means: don't raise error if JWT is missing (we'll try session instead)
+        verify_jwt_in_request(optional=True)
+        
+        # Line 2: Get user ID from JWT token
+        # get_jwt_identity() extracts the user_id from the JWT token
+        # Returns user_id if token is valid, None if token is missing/invalid
+        user_id = get_jwt_identity()
+        
+        # Line 3: Check if JWT token contained a user ID
         if user_id:
-            return user_id                    # Return JWT user ID if found
+            # JWT token is valid and contains user_id - return it
+            return user_id
     except Exception as e:
-        # JWT verification failed, but that's OK - we'll try session instead
-        logging.debug(f"JWT verification failed: {str(e)}")  # Log JWT errors for debugging
+        # Line 4: JWT verification failed, but that's OK - we'll try session instead
+        # Exception could be: invalid token, expired token, or no token
+        # Log error for debugging (but don't crash - we'll try session)
+        logging.debug(f"JWT verification failed: {str(e)}")
 
-    # Fall back to Flask session (for web browser requests)
-    return session.get("user_id")             # Fallback to session-based auth
+    # Line 5: Fall back to Flask session (for web browser requests)
+    # session.get("user_id") gets user_id from Flask session (set during login)
+    # Returns user_id if logged in, None if not logged in
+    return session.get("user_id")
 
 
 def get_current_user_role():
     """
-    Retrieve user role from session
+    Retrieve user role from Flask session
+    
+    This function gets the user's role ("admin" or "student") from the session.
+    The role is set during login and stored in session["user_role"].
+    
+    Returns:
+        str: User role ("admin" or "student") if logged in, None otherwise
+    
+    Usage:
+        Used to check if user has admin privileges
     """
-    return session.get("user_role")           # Used for admin checks
+    # Get user role from Flask session
+    # session.get("user_role") retrieves the role stored during login
+    # Returns "admin" or "student" if logged in, None if not logged in
+    return session.get("user_role")
 
 # ---------- AUTHENTICATION ROUTES ----------
 
@@ -231,44 +312,86 @@ def login():
         Error (400): {message: "Invalid credentials"}
     """
     try:
-        # Extract login credentials from request
-        data = request.get_json() or {}        # Read JSON body (empty dict if None)
-        email = data.get("email")              # Extract email from request
-        password = data.get("password")        # Extract password from request
+        # Line 1: Extract login credentials from request
+        # request.get_json() reads JSON data from HTTP request body
+        # or {} means: if request body is empty/None, use empty dictionary instead
+        # This prevents errors if JSON is malformed or missing
+        data = request.get_json() or {}
+        
+        # Line 2: Extract email from request data
+        # data.get("email") gets the "email" field from JSON
+        # Returns None if "email" key doesn't exist
+        email = data.get("email")
+        
+        # Line 3: Extract password from request data
+        # data.get("password") gets the "password" field from JSON
+        # Returns None if "password" key doesn't exist
+        password = data.get("password")
 
-        # Validate that both email and password were provided
+        # Line 4: Validate that both email and password were provided
+        # if not email or not password: checks if either is None or empty string
+        # This ensures both fields are present before attempting login
         if not email or not password:
+            # Return error response with 400 status code (Bad Request)
+            # jsonify() converts Python dict to JSON response
             return jsonify({"message": "Email and password are required"}), 400
 
-        # Verify credentials against database (checks email exists and password matches)
-        user = verify_user(email, password)    # Validate credentials, returns user dict or None
+        # Line 5: Verify credentials against database
+        # verify_user() function:
+        #   - Checks if email exists in database
+        #   - Verifies password hash matches stored hash
+        #   - Returns user dict if valid, None if invalid
+        user = verify_user(email, password)
 
-        # If credentials are valid, create authentication tokens
+        # Line 6: Check if credentials were valid
+        # if user: means user dict was returned (not None)
         if user:
-            # Create JWT token for API authentication (used by mobile apps or external clients)
+            # Line 6a: Create JWT token for API authentication
+            # create_access_token() generates a JSON Web Token
+            # identity=str(user["_id"]) sets the token's identity to user ID
+            # JWT tokens are used by mobile apps or external API clients
             access_token = create_access_token(identity=str(user["_id"]))
 
-            # Store session data for backward compatibility (used by web browser requests)
+            # Line 6b: Store session data for backward compatibility
             # Flask sessions allow the web app to remember the logged-in user
-            session.permanent = True           # Make session persist across browser restarts
-            session["user_id"] = str(user["_id"])      # Store user ID in session
-            session["user_email"] = user["email"]      # Store email in session
-            session["user_role"] = user["role"]        # Store role (admin/student) in session
+            # Session data persists across page requests (until logout)
+            
+            # Make session persist across browser restarts
+            # session.permanent = True tells Flask to save session to cookie
+            session.permanent = True
+            
+            # Store user ID in session (used by page routes)
+            # str(user["_id"]) converts MongoDB ObjectId to string
+            session["user_id"] = str(user["_id"])
+            
+            # Store email in session (for display in navbar, etc.)
+            session["user_email"] = user["email"]
+            
+            # Store role in session (for admin checks)
+            # user["role"] is "admin" or "student"
+            session["user_role"] = user["role"]
 
-            # Return success response with token and user info
+            # Line 6c: Return success response with token and user info
+            # jsonify() converts Python dict to JSON response
             return jsonify({
-                "message": "Login successful",
-                "access_token": access_token,  # JWT token for API calls
-                "role": user["role"],          # User role (admin or student)
-                "user_id": str(user["_id"])    # User ID as string
+                "message": "Login successful",           # Success message
+                "access_token": access_token,            # JWT token for API calls
+                "role": user["role"],                    # User role (admin or student)
+                "user_id": str(user["_id"])              # User ID as string
             })
 
-        # Credentials were invalid
+        # Line 7: Credentials were invalid
+        # If we reach here, verify_user() returned None (invalid email/password)
+        # Return error response with 400 status code
         return jsonify({"message": "Invalid credentials"}), 400
 
     except Exception as e:
+        # Line 8: Handle any unexpected errors
+        # This catches database errors, network errors, etc.
         # Log error for debugging (don't expose internal errors to users)
         logging.error(f"Login error: {str(e)}")
+        
+        # Return generic error message (don't leak internal error details)
         return jsonify({"message": "Server error"}), 500
 
 
@@ -296,43 +419,79 @@ def signup():
         Error (400): {message: "Email already exists" or validation error}
     """
     try:
-        # Extract user registration data from request
-        data = request.get_json() or {}        # Get JSON body
-        first_name = data.get("first_name", "").strip()    # Get first name, remove whitespace
-        last_name = data.get("last_name", "").strip()      # Get last name, remove whitespace
-        email = data.get("email", "").strip()              # Get email, remove whitespace
-        password = data.get("password", "")                 # Get password (don't strip, spaces might be intentional)
+        # Line 1: Extract user registration data from request
+        # request.get_json() reads JSON data from HTTP request body
+        # or {} means: if request body is empty/None, use empty dictionary
+        data = request.get_json() or {}
+        
+        # Line 2: Get first name from request data
+        # data.get("first_name", "") gets "first_name" field, defaults to "" if missing
+        # .strip() removes leading/trailing whitespace (spaces, tabs, newlines)
+        first_name = data.get("first_name", "").strip()
+        
+        # Line 3: Get last name from request data
+        # Same as first_name - gets value and removes whitespace
+        last_name = data.get("last_name", "").strip()
+        
+        # Line 4: Get email from request data
+        # Gets email and removes whitespace
+        email = data.get("email", "").strip()
+        
+        # Line 5: Get password from request data
+        # Note: Don't strip password - spaces might be intentional in password
+        # data.get("password", "") gets password, defaults to "" if missing
+        password = data.get("password", "")
 
-        # Validate required fields - ensure all required data is provided
+        # Line 6: Validate required fields - ensure all required data is provided
+        # Check if first_name or last_name is empty (after stripping whitespace)
+        # if not first_name: True if first_name is "" or None
         if not first_name or not last_name:
+            # Return error response - first/last name required
             return jsonify({"message": "First name and last name are required"}), 400
 
+        # Line 7: Validate email was provided
+        # Check if email is empty (after stripping whitespace)
         if not email:
+            # Return error response - email required
             return jsonify({"message": "Email is required"}), 400
 
-        # Validate password strength (minimum 6 characters)
+        # Line 8: Validate password strength (minimum 6 characters)
+        # Check if password is empty OR shorter than 6 characters
+        # len(password) counts number of characters in password string
         if not password or len(password) < 6:
+            # Return error response - password too short
             return jsonify({"message": "Password must be at least 6 characters"}), 400
 
-        # Create user account in database
-        # This function hashes the password and stores user info
-        # Returns user dict if successful, None if email already exists
+        # Line 9: Create user account in database
+        # create_user() function:
+        #   - Checks if email already exists (returns None if exists)
+        #   - Hashes password using werkzeug.security.generate_password_hash()
+        #   - Creates user document in MongoDB
+        #   - Returns user dict if successful, None if email already exists
         user = create_user(first_name, last_name, email, password)
 
-        # Check if user was created successfully
+        # Line 10: Check if user was created successfully
+        # if user: means user dict was returned (not None)
         if user:
-            # User created successfully
+            # Line 10a: User created successfully
+            # Return success response with 201 status code (Created)
             return jsonify({
-                "message": "Account created successfully!",
-                "success": True
-            }), 201  # 201 = Created
+                "message": "Account created successfully!",  # Success message
+                "success": True                              # Success flag
+            }), 201  # 201 = Created (HTTP status code for successful creation)
         else:
-            # Email already exists in database
+            # Line 10b: Email already exists in database
+            # create_user() returned None, meaning email is already registered
+            # Return error response with 400 status code
             return jsonify({"message": "Email already exists"}), 400
 
     except Exception as e:
+        # Line 11: Handle any unexpected errors
+        # This catches database errors, hashing errors, etc.
         # Log error for debugging
         logging.error(f"Signup error: {str(e)}")
+        
+        # Return generic error message (don't leak internal error details)
         return jsonify({"message": "Server error"}), 500
 
 # ---------- BOOK ROUTES ----------
@@ -360,48 +519,99 @@ def get_books():
         Error (500): {message, books: []}
     """
     try:
-        # Extract query parameters from URL (e.g., ?available=true&search=harry)
-        available_only = request.args.get("available", "").lower() == "true"  # Convert "true" string to boolean
-        search_query = request.args.get("search", "").strip()                  # Get search term, remove whitespace
-        genre_filter = request.args.get("genre", "").strip()                   # Get genre filter
-        language_filter = request.args.get("language", "").strip()             # Get language filter
+        # Line 1: Extract query parameters from URL
+        # request.args: Dictionary of URL query parameters (e.g., ?available=true&search=harry)
+        # .get("available", ""): Get "available" parameter, default to "" if not present
+        # .lower(): Convert to lowercase ("True" → "true")
+        # == "true": Compare to string "true", result is boolean (True/False)
+        # Example: ?available=true → True, ?available=false → False, no param → False
+        available_only = request.args.get("available", "").lower() == "true"
+        
+        # Line 2: Get search query parameter
+        # request.args.get("search", ""): Get "search" parameter, default to "" if not present
+        # .strip(): Remove leading/trailing whitespace
+        # Example: ?search=harry potter → "harry potter"
+        search_query = request.args.get("search", "").strip()
+        
+        # Line 3: Get genre filter parameter
+        # request.args.get("genre", ""): Get "genre" parameter, default to "" if not present
+        # .strip(): Remove whitespace
+        # Example: ?genre=Fantasy → "Fantasy"
+        genre_filter = request.args.get("genre", "").strip()
+        
+        # Line 4: Get language filter parameter
+        # request.args.get("language", ""): Get "language" parameter, default to "" if not present
+        # .strip(): Remove whitespace
+        # Example: ?language=English → "English"
+        language_filter = request.args.get("language", "").strip()
 
         # Step 1: Get base list of books (all books or only available ones)
+        # Check if user wants only available books
         if available_only:
-            # Only fetch books that are currently available for borrowing
-            books = get_available_books()  # Returns books where available=True
+            # Line 1a: Fetch only available books
+            # get_available_books() queries MongoDB for books where available=True
+            # Returns list of book documents
+            books = get_available_books()
         else:
-            # Fetch all books regardless of availability status
-            books = get_all_books()       # Returns all books in database
+            # Line 1b: Fetch all books regardless of availability
+            # get_all_books() queries MongoDB for all books (no filter)
+            # Returns list of all book documents
+            books = get_all_books()
 
         # Step 2: Apply search filter (if provided)
-        # Search checks both title and author fields (case-insensitive)
+        # Check if user provided a search query
         if search_query:
-            # Filter books by title or author (case-insensitive matching)
+            # Line 2a: Filter books by title or author (case-insensitive)
+            # List comprehension: creates new list with only matching books
+            # [b for b in books if ...]: Loop through books, keep only those matching condition
+            # search_query.lower(): Convert search term to lowercase ("Harry" → "harry")
+            # b.get("title", ""): Get book's title, default to "" if missing
+            # .lower(): Convert title to lowercase for comparison
+            # in: Check if search term appears anywhere in title/author
+            # or: Match if search term is in title OR author
             books = [b for b in books if 
-                    search_query.lower() in b.get("title", "").lower() or      # Check if search term is in title
-                    search_query.lower() in b.get("author", "").lower()]      # Check if search term is in author
+                    search_query.lower() in b.get("title", "").lower() or      # Check title
+                    search_query.lower() in b.get("author", "").lower()]      # Check author
 
         # Step 3: Apply genre filter (if provided)
+        # Check if user selected a genre filter
         if genre_filter:
-            # Keep only books that match the specified genre
+            # Line 3a: Filter books by genre
+            # List comprehension: keep only books matching the genre
+            # b.get("genre"): Get book's genre field
+            # == genre_filter: Check if genre exactly matches filter
             books = [b for b in books if b.get("genre") == genre_filter]
 
         # Step 4: Apply language filter (if provided)
+        # Check if user selected a language filter
         if language_filter:
-            # Keep only books in the specified language
+            # Line 4a: Filter books by language
+            # List comprehension: keep only books matching the language
+            # b.get("language"): Get book's language field
+            # == language_filter: Check if language exactly matches filter
             books = [b for b in books if b.get("language") == language_filter]
 
         # Step 5: Convert MongoDB ObjectIds to strings for JSON response
+        # serialize_doc() recursively converts all ObjectIds to strings
         # This is necessary because JSON doesn't support MongoDB ObjectId type
+        # Example: {"_id": ObjectId("123")} → {"_id": "123"}
         serialized_books = serialize_doc(books)
 
-        # Return filtered books as JSON
+        # Line 6: Return filtered books as JSON
+        # jsonify(): Converts Python dict to JSON HTTP response
+        # {"books": serialized_books}: Response format with books array
+        # Flask automatically sets Content-Type: application/json header
         return jsonify({"books": serialized_books})
 
     except Exception as e:
-        # Log error and return empty list (don't crash the frontend)
+        # Line 7: Handle any unexpected errors
+        # This catches database errors, network errors, etc.
+        # Log error for debugging
+        # f"Error fetching books: {str(e)}": Format string with error message
         logging.error(f"Error fetching books: {str(e)}")
+        
+        # Return error response with empty books array
+        # This prevents frontend from crashing - it gets empty list instead
         return jsonify({"message": "Error fetching books", "books": []}), 500
 
 # ---------- LOAN ROUTES ----------
@@ -423,35 +633,65 @@ def get_user_loans_endpoint():
         Error (500): {message: "Error fetching loans", loans: []}
     """
     try:
-        # Step 1: Get the current user's ID (from session or JWT token)
+        # Line 1: Get the current user's ID (from session or JWT token)
+        # get_current_user_id() tries JWT first, then falls back to Flask session
+        # Returns user_id string if logged in, None if not logged in
         user_id = get_current_user_id()
+        
+        # Line 2: Check if user is logged in
+        # if not user_id: True if user_id is None or empty string
         if not user_id:
-            # User is not logged in
+            # User is not logged in - return error response
+            # 401 = Unauthorized (HTTP status code for authentication required)
             return jsonify({"message": "Authentication required", "loans": []}), 401
 
-        # Log for debugging (helps track down issues)
+        # Line 3: Log for debugging (helps track down issues)
+        # logging.debug(): Log debug-level message (only shown if DEBUG level enabled)
+        # f"...": f-string formatting (inserts variables into string)
+        # {user_id}: User ID value
+        # {type(user_id)}: Type of user_id (str, ObjectId, etc.)
         logging.debug(f"Fetching loans for user_id: {user_id} (type: {type(user_id)})")
 
-        # Step 2: Fetch user's loans from database
-        # This function uses MongoDB $lookup to join loans with books collection
-        # So each loan includes full book details (title, author, etc.)
+        # Line 4: Fetch user's loans from database
+        # get_user_loans() function:
+        #   - Queries MongoDB loans collection for this user
+        #   - Uses MongoDB $lookup to join with books collection
+        #   - Returns list of loan documents, each containing book details
+        # Each loan includes: loan fields + nested "book" object with title, author, etc.
         loans = get_user_loans(user_id)
         
-        # Log how many loans were found (for debugging)
+        # Line 5: Log how many loans were found (for debugging)
+        # len(loans): Count number of items in loans list
+        # This helps verify the query worked correctly
         logging.debug(f"Found {len(loans)} loans for user")
         
-        # Step 3: Convert MongoDB ObjectIds to strings for JSON response
-        # Loans contain ObjectIds for user_id, book_id, _id - these need to be strings
+        # Line 6: Convert MongoDB ObjectIds to strings for JSON response
+        # serialize_doc() recursively converts all ObjectIds to strings
+        # Loans contain ObjectIds for: user_id, book_id, _id, book._id
+        # JSON doesn't support ObjectId, so we convert to strings
         serialized_loans = serialize_doc(loans)
 
-        # Return loans as JSON array
+        # Line 7: Return loans as JSON array
+        # jsonify(): Converts Python dict to JSON HTTP response
+        # {"loans": serialized_loans}: Response format with loans array
         return jsonify({"loans": serialized_loans})
 
     except Exception as e:
-        # Log full error details for debugging
+        # Line 8: Handle any unexpected errors
+        # This catches database errors, ObjectId conversion errors, etc.
+        
+        # Log error message
         logging.error(f"Error fetching loans: {str(e)}")
+        
+        # Import traceback module (for full error details)
         import traceback
-        logging.error(traceback.format_exc())  # Print full stack trace
+        
+        # Log full stack trace (shows exactly where error occurred)
+        # traceback.format_exc(): Returns full error traceback as string
+        logging.error(traceback.format_exc())
+        
+        # Return error response with empty loans array
+        # Prevents frontend from crashing
         return jsonify({"message": "Error fetching loans", "loans": []}), 500
 
 
@@ -479,57 +719,103 @@ def borrow_book():
         Error (404): {message: "Book not found"}
     """
     try:
-        # Step 1: Verify user is logged in
+        # Line 1: Verify user is logged in
+        # get_current_user_id() gets user_id from session or JWT token
+        # Returns user_id string if logged in, None if not logged in
         user_id = get_current_user_id()
+        
+        # Line 2: Check if user is logged in
         if not user_id:
+            # User not logged in - return error response
+            # 401 = Unauthorized (authentication required)
             return jsonify({"message": "Authentication required"}), 401
 
-        # Step 2: Extract book_id from request body
-        data = request.get_json() or {}        # Get JSON body
-        book_id = data.get("book_id")          # Extract book_id
+        # Line 3: Extract book_id from request body
+        # request.get_json(): Reads JSON data from HTTP request body
+        # or {}: Use empty dict if JSON is None/malformed
+        data = request.get_json() or {}
+        
+        # Line 4: Extract book_id from JSON data
+        # data.get("book_id"): Get "book_id" field from JSON
+        # Returns None if "book_id" key doesn't exist
+        book_id = data.get("book_id")
 
-        # Validate book_id was provided
+        # Line 5: Validate book_id was provided
+        # Check if book_id is None or empty string
         if not book_id:
+            # book_id missing - return error response
+            # 400 = Bad Request (invalid request data)
             return jsonify({"message": "book_id is required"}), 400
 
-        # Step 3: Verify book exists in database
+        # Line 6: Verify book exists in database
+        # get_book_by_id() queries MongoDB for book with matching _id
+        # Returns book document if found, None if not found
         book = get_book_by_id(book_id)
+        
+        # Line 7: Check if book was found
         if not book:
+            # Book doesn't exist - return error response
+            # 404 = Not Found (resource doesn't exist)
             return jsonify({"message": "Book not found"}), 404
 
-        # Step 4: Check if book is available for borrowing
-        # If book.available is False, someone else already borrowed it
+        # Line 8: Check if book is available for borrowing
+        # book.get("available"): Get "available" field from book document
+        # Returns True if available, False if borrowed, None if field missing
+        # if not book.get("available"): True if available is False or None
         if not book.get("available"):
+            # Book is not available (someone else borrowed it)
+            # Return error response
+            # 400 = Bad Request (can't borrow unavailable book)
             return jsonify({"message": "Book is not available"}), 400
 
-        # Step 5: Create loan record in database
-        # This creates a new document in the loans collection with:
-        # - user_id: who borrowed it
-        # - book_id: which book
-        # - borrowed_date: when it was borrowed
-        # - due_date: when it should be returned (14 days from now)
-        # - status: "active"
+        # Line 9: Create loan record in database
+        # create_loan() function:
+        #   - Creates new document in MongoDB loans collection
+        #   - Sets user_id: who borrowed it
+        #   - Sets book_id: which book
+        #   - Sets borrowed_date: current timestamp
+        #   - Sets due_date: 14 days from now
+        #   - Sets status: "active"
+        #   - Sets returned_date: None (not returned yet)
+        # Returns loan document with _id added
         loan = create_loan(user_id, book_id)
         
-        # Step 6: Update book availability to False
-        # This marks the book as "borrowed" so others can't borrow it
+        # Line 10: Update book availability to False
+        # toggle_book_availability() updates book document in database
+        # Sets book.available = False (marks as borrowed)
         # Important: This must happen AFTER creating the loan
+        # If this fails, we still have the loan record (can be cleaned up later)
         toggle_book_availability(book_id, False)
 
-        # Step 7: Convert ObjectIds to strings for JSON response
+        # Line 11: Convert ObjectIds to strings for JSON response
+        # serialize_doc() converts loan._id, loan.user_id, loan.book_id to strings
+        # JSON doesn't support MongoDB ObjectId type
         serialized_loan = serialize_doc(loan)
 
-        # Return success response with loan details
+        # Line 12: Return success response with loan details
+        # jsonify(): Converts Python dict to JSON HTTP response
+        # {"message": ..., "loan": ...}: Response format
+        # 201 = Created (HTTP status code for successful resource creation)
         return jsonify({
-            "message": "Book borrowed successfully",
-            "loan": serialized_loan
-        }), 201  # 201 = Created
+            "message": "Book borrowed successfully",  # Success message
+            "loan": serialized_loan                   # Loan data
+        }), 201
 
     except Exception as e:
-        # Log error with full stack trace for debugging
+        # Line 13: Handle any unexpected errors
+        # This catches database errors, ObjectId conversion errors, etc.
+        
+        # Log error message
         logging.error(f"Error creating loan: {str(e)}")
+        
+        # Import traceback module (for full error details)
         import traceback
+        
+        # Log full stack trace (shows exactly where error occurred)
         logging.error(traceback.format_exc())
+        
+        # Return generic error response
+        # 500 = Internal Server Error
         return jsonify({"message": "Error borrowing book"}), 500
 
 
@@ -556,52 +842,87 @@ def return_book(loan_id):
         Error (404): {message: "Loan not found"}
     """
     try:
-        # Step 1: Verify user is logged in
+        # Line 1: Verify user is logged in
+        # get_current_user_id() gets user_id from session or JWT token
         user_id = get_current_user_id()
+        
+        # Line 2: Check if user is logged in
         if not user_id:
+            # User not logged in - return error response
+            # 401 = Unauthorized
             return jsonify({"message": "Authentication required"}), 401
 
-        # Step 2: Fetch loan from database to verify it exists
-        # We need the loan to:
-        # - Check if it exists
-        # - Verify it belongs to the current user
-        # - Get the book_id to update book availability
+        # Line 3: Fetch loan from database to verify it exists
+        # get_loan_by_id() queries MongoDB for loan with matching _id
+        # We need the loan document to:
+        #   - Check if loan exists
+        #   - Verify it belongs to current user (security check)
+        #   - Get book_id to update book availability
         loan = get_loan_by_id(loan_id)
         
+        # Line 4: Check if loan was found
         if not loan:
+            # Loan doesn't exist - return error response
+            # 404 = Not Found
             return jsonify({"message": "Loan not found"}), 404
 
-        # Step 3: Security check - verify the loan belongs to the current user
+        # Line 5: Security check - verify the loan belongs to the current user
         # This prevents users from returning other people's loans
+        # loan.get("user_id"): Get user_id from loan document (might be ObjectId)
+        # str(...): Convert both to strings for comparison
+        # !=: Check if they're different
         if str(loan.get("user_id")) != str(user_id):
-            return jsonify({"message": "Unauthorized"}), 403  # 403 = Forbidden
+            # Loan belongs to different user - return error
+            # 403 = Forbidden (user doesn't have permission)
+            return jsonify({"message": "Unauthorized"}), 403
 
-        # Step 4: Check if book was already returned
-        # Prevents duplicate returns
+        # Line 6: Check if book was already returned
+        # loan.get("status"): Get status field from loan document
+        # == "returned": Check if status is "returned"
+        # Prevents duplicate returns (trying to return same book twice)
         if loan.get("status") == "returned":
+            # Book already returned - return error response
+            # 400 = Bad Request (invalid operation)
             return jsonify({"message": "Book already returned"}), 400
 
-        # Step 5: Update loan status to "returned"
-        # This sets:
-        # - status: "returned"
-        # - returned_date: current timestamp
+        # Line 7: Update loan status to "returned"
+        # return_loan() function updates loan document in database:
+        #   - Sets status: "returned"
+        #   - Sets returned_date: current timestamp
+        # This preserves borrowing history (who borrowed what, when returned)
         return_loan(loan_id)
 
-        # Step 6: Update book availability to True
-        # This makes the book available for others to borrow again
-        # Important: Must happen AFTER updating loan status
+        # Line 8: Get book_id from loan document
+        # loan.get("book_id"): Get book_id field (might be ObjectId type)
         book_id = loan.get("book_id")
+        
+        # Line 9: Check if book_id exists (safety check)
         if book_id:
-            # Convert ObjectId to string (book_id might be ObjectId type)
+            # Line 9a: Convert ObjectId to string
+            # str(book_id): Convert book_id to string (if it's ObjectId)
             book_id_str = str(book_id)
-            toggle_book_availability(book_id_str, True)  # Set available=True
+            
+            # Line 9b: Update book availability to True
+            # toggle_book_availability() updates book document in database
+            # Sets book.available = True (makes book available for others to borrow)
+            # Important: Must happen AFTER updating loan status
+            # This makes the book show as "Available" in the UI
+            toggle_book_availability(book_id_str, True)
 
-        # Return success message
+        # Line 10: Return success message
+        # jsonify(): Converts Python dict to JSON HTTP response
+        # 200 = OK (default status code, successful operation)
         return jsonify({"message": "Book returned successfully"})
 
     except Exception as e:
+        # Line 11: Handle any unexpected errors
+        # This catches database errors, ObjectId conversion errors, etc.
+        
         # Log error for debugging
         logging.error(f"Error returning book: {str(e)}")
+        
+        # Return generic error response
+        # 500 = Internal Server Error
         return jsonify({"message": "Error returning book"}), 500
 
 # ---------- WISHLIST ROUTES ----------
@@ -622,28 +943,54 @@ def get_wishlist():
         Error (500): {message: "Error fetching wishlist", wishlist: []}
     """
     try:
-        # Step 1: Get the current user's ID (from session or JWT token)
+        # Line 1: Get the current user's ID (from session or JWT token)
+        # get_current_user_id() tries JWT first, then falls back to Flask session
+        # Returns user_id string if logged in, None if not logged in
         user_id = get_current_user_id()
+        
+        # Line 2: Check if user is logged in
         if not user_id:
-            # User is not logged in
+            # User is not logged in - return error response
+            # 401 = Unauthorized (authentication required)
+            # "wishlist": []: Return empty array so frontend doesn't crash
             return jsonify({"message": "Authentication required", "wishlist": []}), 401
 
-        # Step 2: Fetch user's wishlist from database
-        # This returns a list of wishlist items, each containing book_id
+        # Line 3: Fetch user's wishlist from database
+        # get_user_wishlist() queries MongoDB wishlist collection
+        # Filters by user_id to get only this user's wishlist items
+        # Returns list of wishlist documents, each containing:
+        #   - _id: wishlist item ID
+        #   - user_id: who added it
+        #   - book_id: which book
+        #   - added_at: when it was added
         wishlist_items = get_user_wishlist(user_id)
         
-        # Step 3: Convert MongoDB ObjectIds to strings for JSON response
-        # Wishlist items contain ObjectIds for user_id, book_id, _id - these need to be strings
+        # Line 4: Convert MongoDB ObjectIds to strings for JSON response
+        # serialize_doc() recursively converts all ObjectIds to strings
+        # Wishlist items contain ObjectIds for: user_id, book_id, _id
+        # JSON doesn't support ObjectId type, so we convert to strings
         serialized_wishlist = serialize_doc(wishlist_items)
 
-        # Return wishlist as JSON array
+        # Line 5: Return wishlist as JSON array
+        # jsonify(): Converts Python dict to JSON HTTP response
+        # {"wishlist": serialized_wishlist}: Response format with wishlist array
         return jsonify({"wishlist": serialized_wishlist})
 
     except Exception as e:
-        # Log error for debugging
+        # Line 6: Handle any unexpected errors
+        # This catches database errors, ObjectId conversion errors, etc.
+        
+        # Log error message
         logging.error(f"Error fetching wishlist: {str(e)}")
+        
+        # Import traceback module (for full error details)
         import traceback
+        
+        # Log full stack trace (shows exactly where error occurred)
         logging.error(traceback.format_exc())
+        
+        # Return error response with empty wishlist array
+        # Prevents frontend from crashing
         return jsonify({"message": "Error fetching wishlist", "wishlist": []}), 500
 
 
@@ -670,42 +1017,81 @@ def add_to_wishlist_endpoint():
         Error (404): {message: "Book not found"}
     """
     try:
-        # Step 1: Verify user is logged in
+        # Line 1: Verify user is logged in
+        # get_current_user_id() gets user_id from session or JWT token
         user_id = get_current_user_id()
+        
+        # Line 2: Check if user is logged in
         if not user_id:
+            # User not logged in - return error response
+            # 401 = Unauthorized
             return jsonify({"message": "Authentication required"}), 401
 
-        # Step 2: Extract book_id from request body
-        data = request.get_json() or {}        # Get JSON body
-        book_id = data.get("book_id")          # Extract book_id
+        # Line 3: Extract book_id from request body
+        # request.get_json(): Reads JSON data from HTTP request body
+        # or {}: Use empty dict if JSON is None/malformed
+        data = request.get_json() or {}
+        
+        # Line 4: Extract book_id from JSON data
+        # data.get("book_id"): Get "book_id" field from JSON
+        # Returns None if "book_id" key doesn't exist
+        book_id = data.get("book_id")
 
-        # Validate book_id was provided
+        # Line 5: Validate book_id was provided
+        # Check if book_id is None or empty string
         if not book_id:
+            # book_id missing - return error response
+            # 400 = Bad Request
             return jsonify({"message": "book_id is required"}), 400
 
-        # Step 3: Verify book exists in database
+        # Line 6: Verify book exists in database
+        # get_book_by_id() queries MongoDB for book with matching _id
+        # Returns book document if found, None if not found
         book = get_book_by_id(book_id)
+        
+        # Line 7: Check if book was found
         if not book:
+            # Book doesn't exist - return error response
+            # 404 = Not Found
             return jsonify({"message": "Book not found"}), 404
 
-        # Step 4: Add book to wishlist
-        # This function checks if already in wishlist and returns existing item if so
+        # Line 8: Add book to wishlist
+        # add_to_wishlist() function:
+        #   - Checks if book is already in user's wishlist
+        #   - If already exists, returns existing wishlist item (doesn't create duplicate)
+        #   - If not exists, creates new wishlist document in MongoDB
+        #   - Returns wishlist item document
         wishlist_item = add_to_wishlist(user_id, book_id)
         
-        # Step 5: Convert ObjectIds to strings for JSON response
+        # Line 9: Convert ObjectIds to strings for JSON response
+        # serialize_doc() converts wishlist_item._id, user_id, book_id to strings
+        # JSON doesn't support MongoDB ObjectId type
         serialized_item = serialize_doc(wishlist_item)
 
-        # Return success response with wishlist item
+        # Line 10: Return success response with wishlist item
+        # jsonify(): Converts Python dict to JSON HTTP response
+        # {"message": ..., "wishlist_item": ...}: Response format
+        # 201 = Created (HTTP status code for successful resource creation)
         return jsonify({
-            "message": "Book added to wishlist",
-            "wishlist_item": serialized_item
-        }), 201  # 201 = Created
+            "message": "Book added to wishlist",      # Success message
+            "wishlist_item": serialized_item          # Wishlist item data
+        }), 201
 
     except Exception as e:
-        # Log error with full stack trace for debugging
+        # Line 11: Handle any unexpected errors
+        # This catches database errors, ObjectId conversion errors, etc.
+        
+        # Log error message
         logging.error(f"Error adding to wishlist: {str(e)}")
+        
+        # Import traceback module (for full error details)
         import traceback
+        
+        # Log full stack trace (shows exactly where error occurred)
         logging.error(traceback.format_exc())
+        
+        # Return generic error response
+        # 500 = Internal Server Error
         return jsonify({"message": "Error adding to wishlist"}), 500
 
 
@@ -729,31 +1115,61 @@ def remove_from_wishlist_endpoint(book_id):
         Error (404): {message: "Book not found in wishlist"}
     """
     try:
-        # Step 1: Verify user is logged in
+        # Line 1: Verify user is logged in
+        # get_current_user_id() gets user_id from session or JWT token
+        # book_id comes from URL parameter: /api/wishlist/<book_id>
         user_id = get_current_user_id()
+        
+        # Line 2: Check if user is logged in
         if not user_id:
+            # User not logged in - return error response
+            # 401 = Unauthorized
             return jsonify({"message": "Authentication required"}), 401
 
-        # Validate book_id was provided
+        # Line 3: Validate book_id was provided
+        # Check if book_id is None or empty string
+        # book_id comes from URL, so it should always exist, but check anyway
         if not book_id:
+            # book_id missing - return error response
+            # 400 = Bad Request
             return jsonify({"message": "book_id is required"}), 400
 
-        # Step 2: Remove book from wishlist
-        # This function returns True if book was removed, False if not found
+        # Line 4: Remove book from wishlist
+        # remove_from_wishlist() function:
+        #   - Queries MongoDB wishlist collection
+        #   - Finds document matching user_id AND book_id
+        #   - Deletes the document
+        #   - Returns True if document was deleted, False if not found
         success = remove_from_wishlist(user_id, book_id)
 
+        # Line 5: Check if removal was successful
         if success:
-            # Book was successfully removed
+            # Line 5a: Book was successfully removed
+            # Return success response
+            # 200 = OK (default status code)
             return jsonify({"message": "Book removed from wishlist"})
         else:
-            # Book was not found in wishlist
+            # Line 5b: Book was not found in wishlist
+            # remove_from_wishlist() returned False (document not found)
+            # Return error response
+            # 404 = Not Found
             return jsonify({"message": "Book not found in wishlist"}), 404
 
     except Exception as e:
-        # Log error for debugging
+        # Line 6: Handle any unexpected errors
+        # This catches database errors, ObjectId conversion errors, etc.
+        
+        # Log error message
         logging.error(f"Error removing from wishlist: {str(e)}")
+        
+        # Import traceback module (for full error details)
         import traceback
+        
+        # Log full stack trace (shows exactly where error occurred)
         logging.error(traceback.format_exc())
+        
+        # Return generic error response
+        # 500 = Internal Server Error
         return jsonify({"message": "Error removing from wishlist"}), 500
 
 
@@ -774,18 +1190,36 @@ def get_book(book_id):
         Error (500): {message: "Error fetching book"}
     """
     try:
-        # Fetch book from database
+        # Line 1: Fetch book from database
+        # get_book_by_id() queries MongoDB books collection for book with matching _id
+        # book_id comes from URL parameter: /api/books/<book_id>
+        # Returns book document if found, None if not found
         book = get_book_by_id(book_id)
+        
+        # Line 2: Check if book was found
         if not book:
+            # Book doesn't exist - return error response
+            # 404 = Not Found
             return jsonify({"message": "Book not found"}), 404
 
-        # Convert MongoDB ObjectIds to strings for JSON response
+        # Line 3: Convert MongoDB ObjectIds to strings for JSON response
+        # serialize_doc() converts book._id to string
+        # JSON doesn't support MongoDB ObjectId type
         serialized_book = serialize_doc(book)
 
-        # Return book as JSON
+        # Line 4: Return book as JSON
+        # jsonify(): Converts Python dict to JSON HTTP response
+        # serialized_book: Book document with ObjectIds converted to strings
+        # 200 = OK (default status code)
         return jsonify(serialized_book)
 
     except Exception as e:
+        # Line 5: Handle any unexpected errors
+        # This catches database errors, ObjectId conversion errors, etc.
+        
         # Log error for debugging
         logging.error(f"Error fetching book: {str(e)}")
+        
+        # Return generic error response
+        # 500 = Internal Server Error
         return jsonify({"message": "Error fetching book"}), 500
