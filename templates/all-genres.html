@@ -1,58 +1,82 @@
+{# Extend the base layout template #}
 {% extends "base.html" %}
 
+{# Page title block #}
 {% block title %}All Genres{% endblock %}
 
+{# Extra CSS block for page-specific styling #}
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='all-genres.css') }}">
 {% endblock %}
 
+{# Main content block #}
 {% block content %}
 
+<!-- Page heading -->
 <h1 class="mb-4">Browse by Genre</h1>
 
+<!-- Bootstrap row that will hold genre cards -->
 <div class="row" id="genresGrid">
-  <!-- Genres will be loaded here -->
+  <!-- Genres will be dynamically loaded here via JavaScript -->
 </div>
 
 {% endblock %}
 
+{# Extra JavaScript block #}
 {% block extra_js %}
 <script>
+/* Run the script after the DOM content is fully loaded */
 document.addEventListener("DOMContentLoaded", function() {
+
+  /* Function to fetch genres from the backend API */
   function loadGenres() {
-    fetch("/api/genres")
-      .then(res => res.json())
+    fetch("/api/genres")              // Send GET request to API endpoint
+      .then(res => res.json())        // Convert response to JSON
       .then(data => {
-        displayGenres(data.genres || []);
+        displayGenres(data.genres || []); // Pass genres to display function
       })
-      .catch(err => console.error("Error:", err));
+      .catch(err => console.error("Error:", err)); // Handle errors
   }
   
+  /* Function to display genres on the page */
   function displayGenres(genres) {
-    const grid = document.getElementById("genresGrid");
+    const grid = document.getElementById("genresGrid"); // Select grid container
     
+    /* If no genres are found, show an info alert */
     if (genres.length === 0) {
-      grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No genres found.</div></div>';
+      grid.innerHTML = `
+        <div class="col-12">
+          <div class="alert alert-info">No genres found.</div>
+        </div>`;
       return;
     }
     
+    /* Generate HTML for each genre card */
     grid.innerHTML = genres.map(genre => `
-      <div class="col-md-4 mb-4">
-        <div class="card h-100">
+      <div class="col-md-4 mb-4"> <!-- Column for responsive layout -->
+        <div class="card h-100">   <!-- Bootstrap card -->
+          
           <div class="card-body">
-            <h5 class="card-title">${genre.name}</h5>
-            <p class="card-text">${genre.description || 'Browse books in this genre'}</p>
+            <h5 class="card-title">${genre.name}</h5> <!-- Genre name -->
+            <p class="card-text">
+              ${genre.description || 'Browse books in this genre'}
+            </p> <!-- Genre description or fallback text -->
           </div>
+          
           <div class="card-footer">
-            <a href="/all-books?genre=${encodeURIComponent(genre.name)}" class="btn btn-primary">
+            <!-- Link to books filtered by selected genre -->
+            <a href="/all-books?genre=${encodeURIComponent(genre.name)}"
+               class="btn btn-primary">
               <i class="bi bi-book"></i> See Books
             </a>
           </div>
+        
         </div>
       </div>
-    `).join('');
+    `).join(''); // Combine all cards into one HTML string
   }
   
+  /* Load genres when the page loads */
   loadGenres();
 });
 </script>

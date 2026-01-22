@@ -1,38 +1,61 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- Character encoding -->
   <meta charset="utf-8">
+
+  <!-- Responsive viewport for mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Page title (can be overridden by child templates) -->
   <title>{% block title %}Library System{% endblock %}</title>
 
-  <!-- Bootstrap CSS -->
+  <!-- Bootstrap CSS (layout, grid, components) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   
-  <!-- Global CSS -->
+  <!-- Global custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 
-  <!-- Page-specific CSS -->
+  <!-- Page-specific CSS (injected by child templates) -->
   {% block extra_css %}{% endblock %}
 </head>
 
 <body>
 
-<!-- Bootstrap Navbar -->
+<!-- Main navigation bar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
+
+    <!-- Website logo / home link -->
     <a class="navbar-brand" href="{{ url_for('pages.index') }}">
       <i class="bi bi-book"></i> Library System
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+
+    <!-- Mobile menu toggle button -->
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
+
+    <!-- Collapsible navbar content -->
     <div class="collapse navbar-collapse" id="navbarNav">
+
+      <!-- Left-side navigation links -->
       <ul class="navbar-nav me-auto">
+
+        <!-- Public link: all books -->
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('pages.all_books') }}">All Books</a>
         </li>
+
+        <!-- Links visible only when the user is logged in -->
         {% if session.user_id %}
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('pages.dashboard') }}">Dashboard</a>
@@ -46,6 +69,8 @@
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('pages.my_requests') }}">My Requests</a>
         </li>
+
+        <!-- Admin-only link -->
         {% if session.user_role == 'admin' %}
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('pages.admin') }}">Admin</a>
@@ -53,24 +78,50 @@
         {% endif %}
         {% endif %}
       </ul>
+
+      <!-- Right-side authentication menu -->
       <ul class="navbar-nav">
+
+        <!-- If the user is logged in -->
         {% if session.user_id %}
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+
+          <!-- User dropdown trigger -->
+          <a class="nav-link dropdown-toggle"
+             href="#"
+             id="navbarDropdown"
+             role="button"
+             data-bs-toggle="dropdown"
+             aria-expanded="false">
             <i class="bi bi-person-circle"></i> {{ session.user_email }}
           </a>
+
+          <!-- Dropdown menu -->
           <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ url_for('pages.dashboard') }}">Dashboard</a></li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('pages.dashboard') }}">
+                Dashboard
+              </a>
+            </li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="{{ url_for('pages.logout') }}">Logout</a></li>
+            <li>
+              <a class="dropdown-item" href="{{ url_for('pages.logout') }}">
+                Logout
+              </a>
+            </li>
           </ul>
         </li>
+
+        <!-- If the user is NOT logged in -->
         {% else %}
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('pages.log_in') }}">Login</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link btn btn-warning text-dark ms-2" href="{{ url_for('pages.sign_up') }}">Sign Up</a>
+          <a class="nav-link btn btn-warning text-dark ms-2"
+             href="{{ url_for('pages.sign_up') }}">
+            Sign Up
+          </a>
         </li>
         {% endif %}
       </ul>
@@ -78,21 +129,23 @@
   </div>
 </nav>
 
+<!-- Main page content -->
 <main class="container my-4">
   {% block content %}
   {% endblock %}
 </main>
 
+<!-- Footer section -->
 <footer class="bg-light text-center py-3 mt-5">
   <div class="container">
     <p class="mb-0">&copy; 2026 Library System — Demo for class</p>
   </div>
 </footer>
 
-<!-- Bootstrap JS -->
+<!-- Bootstrap JavaScript bundle (includes Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Page-specific JavaScript -->
+<!-- Page-specific JavaScript (injected by child templates) -->
 {% block extra_js %}
 {% endblock %}
 

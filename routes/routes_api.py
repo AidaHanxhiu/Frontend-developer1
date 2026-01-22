@@ -1,97 +1,112 @@
 # ---------- IMPORTS ----------
-import logging
-import sys
+# Standard library imports
+import logging                     # Used for logging errors and debug info
+import sys                         # Used to flush stdout for console printing
+
+# Flask-related imports
 from flask import Blueprint, jsonify, request, session, current_app
+
+# JWT authentication utilities
 from flask_jwt_extended import (
-    create_access_token,
-    jwt_required,
-    get_jwt_identity,
-    verify_jwt_in_request
+    create_access_token,          # Create JWT access tokens
+    jwt_required,                 # Protect routes with JWT (not always used)
+    get_jwt_identity,             # Get user ID from JWT
+    verify_jwt_in_request         # Verify JWT optionally
 )
+
+# MongoDB ObjectId handling
 from bson import ObjectId
-from bson.json_util import dumps
+from bson.json_util import dumps  # Convert BSON to JSON
 
 # ---------- MODEL IMPORTS ----------
 # User-related database operations
 from models.users_model import (
-    verify_user,
-    get_user_by_email,
-    create_user,
-    get_all_users,
-    update_user,
-    delete_user,
-    create_password_reset_token,
-    verify_reset_token,
-    invalidate_reset_token,
-    update_user_password
+    verify_user,                  # Verify email/password
+    get_user_by_email,            # Fetch user by email
+    create_user,                  # Create new user
+    get_all_users,                # Fetch all users
+    update_user,                  # Update user info
+    delete_user,                  # Delete user
+    create_password_reset_token,  # Create password reset token
+    verify_reset_token,           # Validate reset token
+    invalidate_reset_token,       # Mark token as used
+    update_user_password          # Update hashed password
 )
 
 # Book-related database operations
 from models.books_model import (
-    get_all_books,
-    get_book_by_id,
-    create_book,
-    update_book,
-    delete_book,
-    search_books,
-    get_available_books,
-    get_books_by_genre,
-    get_books_by_language
+    get_all_books,                # Fetch all books
+    get_book_by_id,               # Fetch book by ID
+    create_book,                  # Create book
+    update_book,                  # Update book
+    delete_book,                  # Delete book
+    search_books,                 # Search by title/author
+    get_available_books,          # Fetch available books
+    get_books_by_genre,           # Fetch by genre
+    get_books_by_language         # Fetch by language
 )
 
 # Loan and reservation operations
 from models.loans_model import (
-    create_loan,
-    get_user_loans,
-    get_active_loans,
-    get_loan_by_id,
-    return_loan,
-    delete_loan,
-    create_reservation,
-    get_all_reservations,
-    get_reservation_by_id,
-    get_user_reservations,
-    update_reservation,
-    delete_reservation,
+    create_loan,                  # Create loan
+    get_user_loans,               # Fetch user's loans
+    get_active_loans,             # Fetch active loans
+    get_loan_by_id,               # Fetch loan by ID
+    return_loan,                  # Mark loan returned
+    delete_loan,                  # Delete loan
+    create_reservation,           # Create reservation
+    get_all_reservations,         # Fetch all reservations
+    get_reservation_by_id,        # Fetch reservation by ID
+    get_user_reservations,        # Fetch user's reservations
+    update_reservation,           # Update reservation
+    delete_reservation,           # Delete reservation
 )
 
 # Requests, wishlist, reviews, genres, authors
 from models.requests_model import (
-    create_request,
-    get_user_requests,
-    get_all_requests,
-    update_request_status,
-    delete_request
+    create_request,               # Create request
+    get_user_requests,            # Fetch user requests
+    get_all_requests,             # Fetch all requests
+    update_request_status,        # Update request status
+    delete_request                # Delete request
 )
+
 from models.wishlist_model import (
-    add_to_wishlist,
-    get_user_wishlist,
-    remove_from_wishlist,
-    is_in_wishlist
+    add_to_wishlist,              # Add book to wishlist
+    get_user_wishlist,            # Fetch wishlist
+    remove_from_wishlist,         # Remove wishlist item
+    is_in_wishlist                # Check wishlist status
 )
+
 from models.reviews_model import (
-    create_review,
-    get_all_reviews,
-    get_review_by_id,
-    get_book_reviews,
-    get_book_rating,
-    update_review,
-    delete_review,
+    create_review,                # Create/update review
+    get_all_reviews,              # Fetch all reviews
+    get_review_by_id,             # Fetch review
+    get_book_reviews,             # Fetch book reviews
+    get_book_rating,              # Calculate rating
+    update_review,                # Update review
+    delete_review,                # Delete review
 )
-from models.genres_model import get_all_genres, create_genre
+
+from models.genres_model import (
+    get_all_genres,               # Fetch genres
+    create_genre                  # Create genre
+)
+
 from models.authors_model import (
-    get_all_authors,
-    create_publisher,
-    get_all_publishers,
-    get_publisher_by_id,
-    update_publisher,
-    delete_publisher,
+    get_all_authors,              # Fetch authors
+    create_publisher,             # Create publisher
+    get_all_publishers,           # Fetch publishers
+    get_publisher_by_id,          # Fetch publisher
+    update_publisher,             # Update publisher
+    delete_publisher,             # Delete publisher
 )
 
 # ---------- API BLUEPRINT ----------
-# All API routes are grouped under /api
+# Create API blueprint with /api prefix
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
+# Enable debug-level logging
 logging.basicConfig(level=logging.DEBUG)
 
 # ---------- HELPER FUNCTIONS ----------
@@ -101,43 +116,46 @@ def serialize_doc(doc):
     Convert MongoDB documents (ObjectId) into JSON-serializable format
     """
     if doc is None:
-        return None
+        return None                          # Return None if document is empty
+
     if isinstance(doc, list):
-        return [serialize_doc(item) for item in doc]
+        return [serialize_doc(item) for item in doc]  # Recursively serialize lists
+
     if isinstance(doc, dict):
         result = {}
         for key, value in doc.items():
             if isinstance(value, ObjectId):
-                result[key] = str(value)
+                result[key] = str(value)     # Convert ObjectId to string
             elif isinstance(value, (list, dict)):
-                result[key] = serialize_doc(value)
+                result[key] = serialize_doc(value)  # Recursive conversion
             else:
                 result[key] = value
         return result
-    return doc
+
+    return doc                               # Return primitive values unchanged
 
 
 def get_current_user_id():
     """
     Retrieve user ID from JWT token if available,
-    otherwise fall back to session-based authentication
+    otherwise fall back to session-based authentication.
     """
     try:
-        verify_jwt_in_request(optional=True)
-        user_id = get_jwt_identity()
+        verify_jwt_in_request(optional=True)  # Check JWT if present
+        user_id = get_jwt_identity()          # Get user ID from token
         if user_id:
             return user_id
-    except:
-        pass
+    except Exception as e:
+        logging.debug(f"JWT verification failed: {str(e)}")  # Log JWT errors
 
-    return session.get("user_id")
+    return session.get("user_id")             # Fallback to session
 
 
 def get_current_user_role():
     """
     Retrieve user role from session
     """
-    return session.get("user_role")
+    return session.get("user_role")           # Used for admin checks
 
 # ---------- AUTHENTICATION ROUTES ----------
 
@@ -147,14 +165,14 @@ def login():
     User login with JWT token generation
     """
     try:
-        data = request.get_json() or {}
-        email = data.get("email")
-        password = data.get("password")
+        data = request.get_json() or {}        # Read JSON body
+        email = data.get("email")              # Extract email
+        password = data.get("password")        # Extract password
 
         if not email or not password:
             return jsonify({"message": "Email and password are required"}), 400
 
-        user = verify_user(email, password)
+        user = verify_user(email, password)    # Validate credentials
 
         if user:
             access_token = create_access_token(identity=str(user["_id"]))
@@ -173,462 +191,7 @@ def login():
             })
 
         return jsonify({"message": "Invalid credentials"}), 400
+
     except Exception as e:
         logging.error(f"Login error: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/logout", methods=["POST"])
-def logout():
-    """Clear user session"""
-    session.clear()
-    return jsonify({"message": "Logged out successfully"})
-
-
-@api_bp.route("/signup", methods=["POST"])
-def signup():
-    """
-    Create a new user account
-    """
-    try:
-        data = request.get_json() or {}
-        if not all(data.get(k) for k in ["first_name", "last_name", "email", "password"]):
-            return jsonify({"message": "All fields are required"}), 400
-
-        if get_user_by_email(data["email"]):
-            return jsonify({"message": "Email already exists"}), 400
-
-        user = create_user(
-            data["first_name"],
-            data["last_name"],
-            data["email"],
-            data["password"]
-        )
-
-        return jsonify({
-            "message": "Account created successfully",
-            "role": user["role"],
-            "user_id": str(user["_id"])
-        })
-    except Exception as e:
-        logging.error(f"Signup error: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-# ---------- PASSWORD RESET ROUTES ----------
-
-# POST /api/forgot-password - Generate password reset token (demo mode)
-# This endpoint generates a secure token and prints the reset link in console
-@api_bp.route("/forgot-password", methods=["POST"])
-def forgot_password():
-    """
-    Generate password reset token and print reset link in console (demo mode).
-    Used by the Forgot Password page.
-    """
-    try:
-        # Get email from request body
-        data = request.get_json() or {}
-        email = data.get("email")
-
-        # Validate that email is provided
-        if not email:
-            return jsonify({"message": "Email is required"}), 400
-
-        # Check if user exists in database
-        user = get_user_by_email(email)
-        if not user:
-            # Return success even if user doesn't exist (security: prevents email enumeration)
-            # This way attackers can't tell which emails are registered
-            return jsonify({"message": "If that email exists, a reset link has been sent"})
-
-        # Generate secure reset token (expires in 1 hour)
-        # Token is stored in password_reset_tokens collection
-        reset_token = create_password_reset_token(str(user["_id"]))
-
-        # Create the reset link that user will visit
-        reset_link = f"http://127.0.0.1:5001/reset-password/{reset_token}"
-
-        # Print reset link in server console (demo mode - no real email sent)
-        print("\n" + "="*60)
-        print("PASSWORD RESET LINK (DEMO MODE)")
-        print("="*60)
-        print(f"User: {email}")
-        print(f"Reset Link: {reset_link}")
-        print(f"Token expires in: 1 hour")
-        print("="*60 + "\n")
-        sys.stdout.flush()
-
-        # Return success message (same message whether user exists or not)
-        return jsonify({
-            "message": "If that email exists, a reset link has been sent. Check the server console (terminal) for the demo reset link."
-        })
-
-    except Exception as e:
-        # Log error and return server error response
-        logging.error(f"Error processing forgot password: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-# POST /api/reset-password - Reset user password using token
-# This endpoint verifies the token and updates the user's password
-@api_bp.route("/reset-password", methods=["POST"])
-def reset_password():
-    """
-    Reset user password using reset token.
-    Used by the Reset Password page.
-    """
-    try:
-        # Get token and new password from request body
-        data = request.get_json() or {}
-        token = data.get("token")
-        new_password = data.get("new_password")
-
-        # Validate that both token and password are provided
-        if not token or not new_password:
-            return jsonify({"message": "Token and new password are required"}), 400
-
-        # Validate password meets minimum length requirement
-        if len(new_password) < 6:
-            return jsonify({"message": "Password must be at least 6 characters"}), 400
-
-        # Verify token is valid (not expired and not used)
-        token_doc = verify_reset_token(token)
-        if not token_doc:
-            # Token is invalid, expired, or already used
-            return jsonify({"message": "Invalid or expired reset token"}), 400
-
-        # Get user ID from the token document
-        user_id = str(token_doc["user_id"])
-
-        # Update user password in database (password is hashed before storage)
-        success = update_user_password(user_id, new_password)
-        if not success:
-            return jsonify({"message": "Failed to update password"}), 500
-
-        # Invalidate token so it cannot be reused (mark as used)
-        invalidate_reset_token(token)
-
-        # Return success message
-        return jsonify({"message": "Password reset successfully"})
-
-    except Exception as e:
-        # Log error and return server error response
-        logging.error(f"Error resetting password: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-# ---------- LOANS ROUTES ----------
-
-@api_bp.route("/loans", methods=["GET"])
-def get_loans():
-    """
-    Get all loans for the currently logged-in user
-    (used by the My Books / My Borrowed Books page)
-    """
-    user_id = get_current_user_id()
-
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    try:
-        loans = get_user_loans(user_id)
-        loans_serialized = [serialize_doc(loan) for loan in loans]
-        return jsonify({"loans": loans_serialized})
-    except Exception as e:
-        logging.error(f"Error fetching user loans: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/loans", methods=["POST"])
-def create_user_loan():
-    """
-    Create a new loan for the currently logged-in user.
-    Used by the Borrow Book page (borrow.html) via POST /api/loans.
-    
-    This endpoint handles the borrow flow:
-    1. Validates the user is logged in
-    2. Checks the book exists and is available
-    3. Creates a loan record in the database
-    4. Updates the book's availability flag to False
-    
-    The book's 'available' field is the source of truth for the UI.
-    When a book is borrowed, we set available=False so that:
-    - All Books page shows "Borrowed" badge
-    - Book Details page shows "Currently Borrowed"
-    - Other users cannot borrow the same book
-    """
-    user_id = get_current_user_id()
-
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    try:
-        # Get the book_id from the request body (sent by the frontend)
-        data = request.get_json() or {}
-        book_id = data.get("book_id")
-
-        if not book_id:
-            return jsonify({"message": "book_id is required"}), 400
-
-        # Ensure book exists and is available
-        # We check availability BEFORE creating the loan to prevent double-borrowing
-        book = get_book_by_id(book_id)
-        if not book:
-            return jsonify({"message": "Book not found"}), 404
-        # The 'available' field determines if a book can be borrowed
-        # If available=False, the book is already borrowed by someone else
-        if not book.get("available", True):
-            return jsonify({"message": "Book is not available"}), 400
-
-        # Create loan and mark book as unavailable
-        # Step 1: Create a loan record in the loans collection
-        # This stores who borrowed what book and when
-        loan = create_loan(user_id, book_id)
-        # Step 2: Update the book's availability flag to False
-        # This is critical: the book.available field is what the UI checks
-        # to display "Available" vs "Borrowed" status on All Books page
-        # Without this update, the book would still show as available even though it's borrowed
-        update_book(book_id, {"available": False})
-
-        return jsonify({"message": "Loan created", "loan": serialize_doc(loan)}), 201
-    except Exception as e:
-        logging.error(f"Error creating loan: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/loans/<loan_id>/return", methods=["POST"])
-def api_return_loan(loan_id):
-    """
-    Mark a loan as returned for the current user
-    (used by the Return Book button on My Books page)
-    
-    This endpoint handles the return flow:
-    1. Validates the user is logged in
-    2. Fetches the loan to get the book_id (we need this to update the book)
-    3. Marks the loan as returned (sets status="returned" and returned_date)
-    4. Updates the book's availability flag to True
-    
-    WHY WE FETCH THE LOAN FIRST:
-    - The loan document contains the book_id that was borrowed
-    - We need the book_id to update the book's availability
-    - We fetch it BEFORE marking as returned to ensure we have the book_id
-    
-    WHY WE UPDATE BOTH THE LOAN AND THE BOOK:
-    - The loan record tracks borrowing history (who borrowed what, when, returned when)
-    - The book's 'available' field is the source of truth for the UI status display
-    - If we only update the loan, the book would still show as "Borrowed" on All Books
-    - If we only update the book, we'd lose the return date in the loan history
-    
-    HOW THIS PREVENTS RETURNED BOOKS FROM STAYING MARKED AS BORROWED:
-    - When a book is borrowed, available=False
-    - When returned, we set available=True
-    - All Books page checks book.available to show "Available" vs "Borrowed" badge
-    - Without updating available=True, the book would permanently show as "Borrowed"
-    """
-    user_id = get_current_user_id()
-
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    try:
-        # Get the loan to extract book_id before returning it
-        # We need to fetch the loan document first because it contains the book_id
-        # The book_id tells us which book to mark as available again
-        # We do this BEFORE updating the loan status to ensure we have the book_id
-        loan = get_loan_by_id(loan_id)
-        if not loan:
-            return jsonify({"message": "Loan not found"}), 404
-
-        # Mark the loan as returned
-        # This updates the loan record: sets status="returned" and returned_date=now
-        # This preserves the borrowing history in the database
-        success = return_loan(loan_id)
-        if success:
-            # Update the book's availability to True so it shows as Available in All Books
-            # This is the critical step that fixes the bug:
-            # Without this, the book would still show "Borrowed" on All Books page
-            # The book.available field is what the UI checks to display the status badge
-            # We extract the book_id from the loan document we fetched earlier
-            book_id = str(loan["book_id"])
-            # Set available=True so the book appears as "Available" on All Books page
-            # This makes the book borrowable again by other users
-            update_book(book_id, {"available": True})
-            return jsonify({"message": "Book returned successfully"})
-        else:
-            return jsonify({"message": "Loan not found"}), 404
-    except Exception as e:
-        logging.error(f"Error returning loan %s: %s", loan_id, str(e))
-        return jsonify({"message": "Server error"}), 500
-
-
-# ---------- WISHLIST ROUTES ----------
-
-@api_bp.route("/wishlist", methods=["GET"])
-def get_wishlist():
-    """
-    Get wishlist items for the currently logged-in user.
-    Used by the My Wishlist page (wish-list.html).
-    """
-    user_id = get_current_user_id()
-
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    try:
-        wishlist = get_user_wishlist(user_id)
-        wishlist_serialized = [serialize_doc(item) for item in wishlist]
-        return jsonify({"wishlist": wishlist_serialized})
-    except Exception as e:
-        logging.error(f"Error fetching user wishlist: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/wishlist", methods=["POST"])
-def add_wishlist_item():
-    """
-    Add a book to the current user's wishlist.
-    Used by the wishlist button on the book details page.
-    """
-    user_id = get_current_user_id()
-
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    data = request.get_json() or {}
-    book_id = data.get("book_id")
-
-    if not book_id:
-        return jsonify({"message": "book_id is required"}), 400
-
-    try:
-        item = add_to_wishlist(user_id, book_id)
-        return jsonify({"message": "Added to wishlist", "item": serialize_doc(item)})
-    except Exception as e:
-        logging.error(f"Error adding to wishlist: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/wishlist/<book_id>", methods=["DELETE"])
-def remove_wishlist_item(book_id):
-    """
-    Remove a book from the current user's wishlist.
-    Used by both the wishlist page and the book details page.
-    """
-    user_id = get_current_user_id()
-
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    try:
-        success = remove_from_wishlist(user_id, book_id)
-        if success:
-            return jsonify({"message": "Removed from wishlist"})
-        else:
-            return jsonify({"message": "Item not found"}), 404
-    except Exception as e:
-        logging.error(f"Error removing from wishlist: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-# ---------- BOOKS ROUTES (READ-ONLY FOR WISHLIST) ----------
-
-@api_bp.route("/books", methods=["GET"])
-def api_get_books():
-    """
-    Get books list with optional filters.
-    Used by All Books and Search pages.
-    """
-    try:
-        available = request.args.get("available")
-        search = request.args.get("search", "").strip()
-        genre = request.args.get("genre", "").strip()
-        language = request.args.get("language", "").strip()
-
-        # Preserve existing model logic; just choose the right query helper
-        if search:
-            books = search_books(search)
-        elif genre:
-            books = get_books_by_genre(genre)
-        elif language:
-            books = get_books_by_language(language)
-        elif available == "true":
-            books = get_available_books()
-        else:
-            books = get_all_books()
-
-        return jsonify({"books": [serialize_doc(b) for b in books]})
-    except Exception as e:
-        logging.error(f"Error fetching books: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/books", methods=["POST"])
-def api_create_book():
-    """
-    Create a new book.
-    Used by Admin Add Book form.
-    """
-    try:
-        data = request.get_json() or {}
-        book = create_book(data)
-        return jsonify({"message": "Book created", "book": serialize_doc(book)})
-    except Exception as e:
-        logging.error(f"Error creating book: {str(e)}")
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/books/<book_id>", methods=["GET", "PUT", "DELETE"])
-def api_book_detail(book_id):
-    """
-    Get single book details.
-    Also supports update/delete for Admin.
-    """
-    try:
-        if request.method == "GET":
-            book = get_book_by_id(book_id)
-            if not book:
-                return jsonify({"message": "Book not found"}), 404
-            return jsonify(serialize_doc(book))
-
-        if request.method == "PUT":
-            data = request.get_json() or {}
-            success = update_book(book_id, data)
-            if success:
-                return jsonify({"message": "Book updated"})
-            return jsonify({"message": "Book not found"}), 404
-
-        if request.method == "DELETE":
-            success = delete_book(book_id)
-            if success:
-                return jsonify({"message": "Book deleted"})
-            return jsonify({"message": "Book not found"}), 404
-
-        return jsonify({"message": "Method not allowed"}), 405
-    except Exception as e:
-        logging.error(f"Error fetching book %s: %s", book_id, str(e))
-        return jsonify({"message": "Server error"}), 500
-
-
-@api_bp.route("/books/<book_id>/reviews", methods=["POST"])
-def api_create_book_review(book_id):
-    """
-    Create or update a review for a book by the current user.
-    Used by book_details.html review form.
-    """
-    user_id = get_current_user_id()
-    if not user_id:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    try:
-        data = request.get_json() or {}
-        rating = data.get("rating")
-        comment = data.get("comment")
-
-        if rating is None:
-            return jsonify({"message": "rating is required"}), 400
-
-        review = create_review(user_id, book_id, rating, comment)
-        return jsonify({"message": "Review saved", "review": serialize_doc(review)})
-    except Exception as e:
-        logging.error(f"Error creating review for book %s: %s", book_id, str(e))
         return jsonify({"message": "Server error"}), 500

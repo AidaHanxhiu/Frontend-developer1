@@ -1,30 +1,45 @@
+{# Extend the base layout template (navbar, footer, shared layout) #}
 {% extends "base.html" %}
 
+{# Set the page title shown in the browser tab #}
 {% block title %}My Wishlist{% endblock %}
 
+{# Page-specific CSS block #}
 {% block extra_css %}
+<!-- Link to the wishlist page stylesheet -->
 <link rel="stylesheet" href="{{ url_for('static', filename='wish-list.css') }}">
 {% endblock %}
 
+{# Main content block #}
 {% block content %}
 
+<!-- Page heading -->
 <h1 class="mb-4">My Wishlist</h1>
 
+<!-- Grid container for wishlist items -->
 <div class="row" id="wishGrid">
-  <!-- Wishlist items will be loaded here -->
+  <!-- Wishlist items will be dynamically loaded here using JavaScript -->
 </div>
 
+{# End of main content block #}
 {% endblock %}
 
+{# Page-specific JavaScript block #}
 {% block extra_js %}
 <script>
+/* Run JavaScript after the DOM has fully loaded */
 document.addEventListener("DOMContentLoaded", function() {
-  // Helper function to get JWT token from localStorage
+
+  /* ----------------------------- */
+  /* Authentication Helper Methods */
+  /* ----------------------------- */
+
+  /* Retrieve JWT token from localStorage */
   function getAuthToken() {
     return localStorage.getItem("access_token");
   }
   
-  // Helper function to create headers with JWT token
+  /* Build request headers including JWT token */
   function getAuthHeaders() {
     const token = getAuthToken();
     const headers = { "Content-Type": "application/json" };
@@ -34,22 +49,44 @@ document.addEventListener("DOMContentLoaded", function() {
     return headers;
   }
   
-  // Load wishlist
+  /* ----------------------------- */
+  /* Load Wishlist from Backend   */
+  /* ----------------------------- */
+
+  /* Fetch wishlist items for the logged-in user */
   function loadWishlist() {
+
+    /* Send GET request to wishlist API */
     fetch("/api/wishlist", {
       headers: getAuthHeaders()
     })
+
+      /* Convert response to JSON */
       .then(res => res.json())
+
+      /* Display wishlist items */
       .then(data => {
         displayWishlist(data.wishlist || []);
       })
+
+      /* Handle errors */
       .catch(err => console.error("Error:", err));
   }
   
+  /* ----------------------------- */
+  /* Display Wishlist Items        */
+  /* ----------------------------- */
+
+  /* Render wishlist items in the grid */
   function displayWishlist(wishlist) {
+
+    /* Get reference to wishlist grid */
     const grid = document.getElementById("wishGrid");
     
+    /* If wishlist is empty */
     if (wishlist.length === 0) {
+
+      /* Show informational message */
       grid.innerHTML = `
         <div class="col-12">
           <div class="alert alert-info">
@@ -61,25 +98,54 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     
-    // Fetch book details for each wishlist item
-    Promise.all(wishlist.map(item => 
-      fetch(`/api/books/${item.book_id}`).then(res => res.json())
-    ))
+    /* Fetch full book details for each wishlist item */
+    Promise.all(
+      wishlist.map(item =>
+        fetch(`/api/books/${item.book_id}`)
+          .then(res => res.json())
+      )
+    )
+
+    /* Render wishlist book cards */
     .then(books => {
       grid.innerHTML = books.map(book => `
         <div class="col-md-4 mb-4">
           <div class="card h-100">
+
+            <!-- Card body -->
             <div class="card-body">
+
+              <!-- Book title -->
               <h5 class="card-title">${book.title || 'Untitled'}</h5>
-              <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p>
-              <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p>
+
+              <!-- Book author -->
+              <p class="card-text">
+                <strong>Author:</strong> ${book.author || 'Unknown'}
+              </p>
+
+              <!-- Book publication year -->
+              <p class="card-text">
+                <strong>Year:</strong> ${book.year || 'N/A'}
+              </p>
+
+              <!-- Availability badge -->
               <span class="badge ${book.available ? 'bg-success' : 'bg-secondary'}">
                 ${book.available ? 'Available' : 'Borrowed'}
               </span>
             </div>
+
+            <!-- Card footer with actions -->
             <div class="card-footer">
-              <a href="/book/${book._id}" class="btn btn-primary btn-sm">View Details</a>
-              <button class="btn btn-danger btn-sm" onclick="removeFromWishlist('${book._id}')">
+
+              <!-- Link to book details page -->
+              <a href="/book/${book._id}"
+                 class="btn btn-primary btn-sm">
+                View Details
+              </a>
+
+              <!-- Remove from wishlist button -->
+              <button class="btn btn-danger btn-sm"
+                      onclick="removeFromWishlist('${book._id}')">
                 <i class="bi bi-heart-fill"></i> Remove
               </button>
             </div>
@@ -87,25 +153,41 @@ document.addEventListener("DOMContentLoaded", function() {
         </div>
       `).join('');
     })
+
+    /* Handle errors when loading books */
     .catch(err => console.error("Error loading books:", err));
   }
   
+  /* ----------------------------- */
+  /* Remove from Wishlist          */
+  /* ----------------------------- */
+
+  /* Make removeFromWishlist globally accessible */
   window.removeFromWishlist = function(bookId) {
+
+    /* Send DELETE request to remove book from wishlist */
     fetch(`/api/wishlist/${bookId}`, {
       method: "DELETE",
       headers: getAuthHeaders()
     })
+
+    /* Convert response to JSON */
     .then(res => res.json())
+
+    /* Handle successful removal */
     .then(data => {
       alert("Removed from wishlist");
       loadWishlist();
     })
+
+    /* Handle errors */
     .catch(err => {
       alert("Error removing from wishlist");
       console.error(err);
     });
   };
   
+  /* Load wishlist when page loads */
   loadWishlist();
 });
 </script>

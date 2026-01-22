@@ -1,37 +1,37 @@
 body {
-  background-color: #f8f9fa;
-  font-family: "Segoe UI", Arial, sans-serif;
+  background-color: #f8f9fa;               /* Set light gray background for the page */
+  font-family: "Segoe UI", Arial, sans-serif; /* Set default font with fallbacks */
 }
 
 h1 {
-  color: #212529;
+  color: #212529;                          /* Set main heading text color */
 }
 
 .lang-card {
-  border-radius: 10px;
-  border: none;
-  transition: transform 0.2s ease-in-out;
+  border-radius: 10px;                     /* Round the corners of the card */
+  border: none;                            /* Remove default border */
+  transition: transform 0.2s ease-in-out;  /* Smooth scaling animation */
 }
 
 .lang-card:hover {
-  transform: scale(1.03);
+  transform: scale(1.03);                  /* Slightly enlarge card on hover */
 }
 
 .card-body {
-  padding: 30px 20px;
+  padding: 30px 20px;                      /* Add space inside the card */
 }
 
 .btn-dark {
-  background-color: #212529;
-  border: none;
+  background-color: #212529;               /* Dark button background */
+  border: none;                            /* Remove button border */
 }
 
 .btn-dark:hover {
-  background-color: #000;
+  background-color: #000;                  /* Darker background when hovered */
 }
 
 footer {
-  font-size: 0.9rem;
-  background-color: #4274a7;
-  color: #212529;
+  font-size: 0.9rem;                       /* Slightly smaller footer text */
+  background-color: #f1f3f5;               /* Light footer background */
+  color: #212529;                          /* Footer text color */
 }

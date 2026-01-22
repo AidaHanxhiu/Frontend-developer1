@@ -1,58 +1,80 @@
+{# Extend the base layout template #}
 {% extends "base.html" %}
 
+{# Page title block #}
 {% block title %}All Languages{% endblock %}
 
+{# Extra CSS block for page-specific styling #}
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='all-languages.css') }}">
 {% endblock %}
 
+{# Main content block #}
 {% block content %}
 
+<!-- Page heading -->
 <h1 class="mb-4">Explore Books by Language</h1>
 
+<!-- Bootstrap row that will contain language cards -->
 <div class="row" id="languagesGrid">
-  <!-- Languages will be loaded here -->
+  <!-- Languages will be dynamically loaded here via JavaScript -->
 </div>
 
 {% endblock %}
 
+{# Extra JavaScript block #}
 {% block extra_js %}
 <script>
+/* Run the script after the DOM is fully loaded */
 document.addEventListener("DOMContentLoaded", function() {
+
+  /* Fetch the list of languages from the backend API */
   function loadLanguages() {
-    fetch("/api/languages")
-      .then(res => res.json())
+    fetch("/api/languages")            // Send GET request to languages API
+      .then(res => res.json())         // Convert response to JSON
       .then(data => {
-        displayLanguages(data.languages || []);
+        displayLanguages(data.languages || []); // Display languages or empty array
       })
-      .catch(err => console.error("Error:", err));
+      .catch(err => console.error("Error:", err)); // Log any errors
   }
   
+  /* Display language cards on the page */
   function displayLanguages(languages) {
-    const grid = document.getElementById("languagesGrid");
+    const grid = document.getElementById("languagesGrid"); // Select grid container
     
+    /* If no languages are found, show an info alert */
     if (languages.length === 0) {
-      grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No languages found.</div></div>';
+      grid.innerHTML = `
+        <div class="col-12">
+          <div class="alert alert-info">No languages found.</div>
+        </div>`;
       return;
     }
     
+    /* Generate HTML cards for each language */
     grid.innerHTML = languages.map(lang => `
-      <div class="col-md-4 mb-4">
-        <div class="card h-100">
+      <div class="col-md-4 mb-4"> <!-- Responsive column -->
+        <div class="card h-100">   <!-- Bootstrap card -->
+          
           <div class="card-body">
-            <h5 class="card-title">${lang}</h5>
-            <p class="card-text">Browse books in ${lang}</p>
+            <h5 class="card-title">${lang}</h5> <!-- Language name -->
+            <p class="card-text">Browse books in ${lang}</p> <!-- Description -->
           </div>
+          
           <div class="card-footer">
-            <a href="/all-books?language=${encodeURIComponent(lang)}" class="btn btn-primary">
+            <!-- Link to books filtered by selected language -->
+            <a href="/all-books?language=${encodeURIComponent(lang)}"
+               class="btn btn-primary">
               <i class="bi bi-book"></i> Browse
             </a>
           </div>
+        
         </div>
       </div>
-    `).join('');
+    `).join(''); // Combine all cards into one HTML string
   }
   
+  /* Load languages when the page loads */
   loadLanguages();
 });
 </script>

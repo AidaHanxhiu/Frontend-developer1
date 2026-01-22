@@ -1,37 +1,73 @@
+{# Extend the base layout template (navbar, footer, shared layout) #}
 {% extends "base.html" %}
 
+{# Set the page title shown in the browser tab #}
 {% block title %}Search Books{% endblock %}
 
+{# Page-specific CSS block #}
 {% block extra_css %}
+<!-- Link to the stylesheet used for the search/all-books page -->
 <link rel="stylesheet" href="{{ url_for('static', filename='all-books.css') }}">
 {% endblock %}
 
+{# Main content block #}
 {% block content %}
 
+<!-- Page heading -->
 <h1 class="mb-4">Search Books</h1>
 
-<!-- Search Form -->
+<!-- ================= -->
+<!-- Search Form Card -->
+<!-- ================= -->
 <div class="card mb-4">
   <div class="card-body">
+
+    <!-- Search and filter form -->
     <form id="searchForm" class="row g-3">
+
+      <!-- Search input column -->
       <div class="col-md-6">
+        <!-- Search input label -->
         <label for="searchInput" class="form-label">Search</label>
+
+        <!-- Input group with icon -->
         <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" class="form-control" id="searchInput" placeholder="Search by title or author..." value="{{ query }}">
+          <!-- Search icon -->
+          <span class="input-group-text">
+            <i class="bi bi-search"></i>
+          </span>
+
+          <!-- Text input for title or author search -->
+          <input type="text"
+                 class="form-control"
+                 id="searchInput"
+                 placeholder="Search by title or author..."
+                 value="{{ query }}">
         </div>
       </div>
+
+      <!-- Genre filter column -->
       <div class="col-md-3">
+        <!-- Genre dropdown label -->
         <label for="genreSelect" class="form-label">Genre</label>
+
+        <!-- Genre dropdown -->
         <select class="form-select" id="genreSelect">
           <option value="">All Genres</option>
+
+          {# Loop through available genres #}
           {% for genre in genres %}
           <option value="{{ genre.name }}">{{ genre.name }}</option>
           {% endfor %}
         </select>
       </div>
+
+      <!-- Language filter column -->
       <div class="col-md-3">
+        <!-- Language dropdown label -->
         <label for="languageSelect" class="form-label">Language</label>
+
+        <!-- Language dropdown -->
         <select class="form-select" id="languageSelect">
           <option value="">All Languages</option>
           <option value="English">English</option>
@@ -40,96 +76,176 @@
           <option value="French">French</option>
         </select>
       </div>
+
+      <!-- Action buttons row -->
       <div class="col-12">
+        <!-- Submit search button -->
         <button type="submit" class="btn btn-dark">
           <i class="bi bi-search"></i> Search
         </button>
-        <button type="button" class="btn btn-outline-secondary" id="clearBtn">Clear</button>
+
+        <!-- Clear filters button -->
+        <button type="button"
+                class="btn btn-outline-secondary"
+                id="clearBtn">
+          Clear
+        </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Results -->
+<!-- ================= -->
+<!-- Search Results -->
+<!-- ================= -->
 <div id="resultsContainer">
+  <!-- Bootstrap row for displaying book cards -->
   <div class="row" id="booksGrid">
-    <!-- Books will be loaded here -->
+    <!-- Book cards will be dynamically inserted here -->
   </div>
 </div>
 
+<!-- ================= -->
 <!-- Pagination -->
+<!-- ================= -->
 <nav aria-label="Page navigation" class="mt-4">
+  <!-- Pagination list -->
   <ul class="pagination justify-content-center" id="pagination">
-    <!-- Pagination will be added here -->
+    <!-- Pagination items will be dynamically added here -->
   </ul>
 </nav>
 
+{# End of main content block #}
 {% endblock %}
 
+{# Page-specific JavaScript block #}
 {% block extra_js %}
 <script>
+/* Run JavaScript after the DOM has fully loaded */
 document.addEventListener("DOMContentLoaded", function() {
+
+  /* Get reference to the search form */
   const searchForm = document.getElementById("searchForm");
+
+  /* Get reference to the books grid container */
   const booksGrid = document.getElementById("booksGrid");
   
+  /* Function to fetch books based on search filters */
   function loadBooks(query = "", genre = "", language = "") {
+
+    /* Base API endpoint */
     let url = "/api/books?";
+
+    /* Append search query parameter if provided */
     if (query) url += `search=${encodeURIComponent(query)}&`;
+
+    /* Append genre filter if provided */
     if (genre) url += `genre=${encodeURIComponent(genre)}&`;
+
+    /* Append language filter if provided */
     if (language) url += `language=${encodeURIComponent(language)}&`;
     
+    /* Send request to backend API */
     fetch(url)
+
+      /* Convert response to JSON */
       .then(res => res.json())
+
+      /* Display books returned by API */
       .then(data => {
         displayBooks(data.books || []);
       })
+
+      /* Handle errors */
       .catch(err => console.error("Error:", err));
   }
   
+  /* Function to display book cards */
   function displayBooks(books) {
+
+    /* If no books are found */
     if (books.length === 0) {
-      booksGrid.innerHTML = '<div class="col-12"><div class="alert alert-info">No books found.</div></div>';
+
+      /* Show informational message */
+      booksGrid.innerHTML =
+        '<div class="col-12">' +
+        '<div class="alert alert-info">No books found.</div>' +
+        '</div>';
       return;
     }
     
+    /* Generate HTML cards for each book */
     booksGrid.innerHTML = books.map(book => `
       <div class="col-md-4 mb-4">
         <div class="card h-100">
+
           <div class="card-body">
+
+            <!-- Book title -->
             <h5 class="card-title">${book.title || 'Untitled'}</h5>
-            <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p>
-            <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p>
-            <p class="card-text"><strong>Genre:</strong> ${book.genre || 'N/A'}</p>
+
+            <!-- Book author -->
+            <p class="card-text">
+              <strong>Author:</strong> ${book.author || 'Unknown'}
+            </p>
+
+            <!-- Publication year -->
+            <p class="card-text">
+              <strong>Year:</strong> ${book.year || 'N/A'}
+            </p>
+
+            <!-- Book genre -->
+            <p class="card-text">
+              <strong>Genre:</strong> ${book.genre || 'N/A'}
+            </p>
+
+            <!-- Availability badge -->
             <span class="badge ${book.available ? 'bg-success' : 'bg-secondary'}">
               ${book.available ? 'Available' : 'Borrowed'}
             </span>
           </div>
+
+          <!-- Card footer with details link -->
           <div class="card-footer">
-            <a href="/book/${book._id}" class="btn btn-primary btn-sm">View Details</a>
+            <a href="/book/${book._id}"
+               class="btn btn-primary btn-sm">
+              View Details
+            </a>
           </div>
         </div>
       </div>
-    `).join('');
+    `).join(''); /* Combine all cards into one HTML string */
   }
   
+  /* Handle search form submission */
   searchForm.addEventListener("submit", function(e) {
+
+    /* Prevent default form submission */
     e.preventDefault();
+
+    /* Read input values */
     const query = document.getElementById("searchInput").value;
     const genre = document.getElementById("genreSelect").value;
     const language = document.getElementById("languageSelect").value;
+
+    /* Load books using selected filters */
     loadBooks(query, genre, language);
   });
   
+  /* Handle clear filters button click */
   document.getElementById("clearBtn").addEventListener("click", function() {
+
+    /* Reset all input fields */
     document.getElementById("searchInput").value = "";
     document.getElementById("genreSelect").value = "";
     document.getElementById("languageSelect").value = "";
+
+    /* Reload books without filters */
     loadBooks();
   });
   
-  // Load initial books
+  /* Load initial books using query from backend (if any) */
   loadBooks("{{ query }}");
 });
 </script>
 {% endblock %}
-

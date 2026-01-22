@@ -1,39 +1,67 @@
+{# Extend the base layout template (navbar, footer, shared layout) #}
 {% extends "base.html" %}
 
+{# Set the page title shown in the browser tab #}
 {% block title %}My Loans{% endblock %}
 
+{# Page-specific CSS block #}
 {% block extra_css %}
+<!-- Link to the CSS file used for loan/book styling -->
 <link rel="stylesheet" href="{{ url_for('static', filename='my-books.css') }}">
 {% endblock %}
 
+{# Main content block #}
 {% block content %}
 
+<!-- Page heading -->
 <h1 class="mb-4">My Loans</h1>
 
+<!-- Container for all loan-related content -->
 <div id="loansContainer">
+
+  <!-- Bootstrap row that will hold loan cards -->
   <div class="row" id="loansList">
-    <!-- Loans will be loaded here -->
+    <!-- Loan cards will be dynamically inserted here using JavaScript -->
   </div>
 </div>
 
+{# End of main content block #}
 {% endblock %}
 
+{# Page-specific JavaScript block #}
 {% block extra_js %}
 <script>
+/* Run JavaScript after the DOM is fully loaded */
 document.addEventListener("DOMContentLoaded", function() {
+
+  /* Function to load loans from the backend API */
   function loadLoans() {
+
+    /* Send GET request to retrieve user's loans */
     fetch("/api/loans")
+
+      /* Convert response to JSON */
       .then(res => res.json())
+
+      /* Pass the loans data to the display function */
       .then(data => {
         displayLoans(data.loans || []);
       })
+
+      /* Handle and log errors */
       .catch(err => console.error("Error:", err));
   }
   
+  /* Function to display loans on the page */
   function displayLoans(loans) {
+
+    /* Get reference to the loan list container */
     const loansList = document.getElementById("loansList");
     
+    /* If the user has no loans */
     if (loans.length === 0) {
+
+      /* Display an informational alert */
       loansList.innerHTML = `
         <div class="col-12">
           <div class="alert alert-info">
@@ -42,76 +70,114 @@ document.addEventListener("DOMContentLoaded", function() {
           </div>
         </div>
       `;
+
+      /* Stop further execution */
       return;
     }
     
+    /* Generate HTML cards for each loan */
     loansList.innerHTML = loans.map(loan => {
-      const borrowedDate = new Date(loan.borrowed_date).toLocaleDateString();
-      const dueDate = new Date(loan.due_date).toLocaleDateString();
-      const isOverdue = new Date(loan.due_date) < new Date() && loan.status === "active";
+
+      /* Format borrowed date */
+      const borrowedDate =
+        new Date(loan.borrowed_date).toLocaleDateString();
+
+      /* Format due date */
+      const dueDate =
+        new Date(loan.due_date).toLocaleDateString();
+
+      /* Determine whether the loan is overdue */
+      const isOverdue =
+        new Date(loan.due_date) < new Date() &&
+        loan.status === "active";
       
+      /* Return HTML for a single loan card */
       return `
         <div class="col-md-6 mb-3">
           <div class="card ${isOverdue ? 'border-danger' : ''}">
             <div class="card-body">
-              <h5 class="card-title">Loan #${loan._id.substring(0, 8)}</h5>
-              <p class="card-text"><strong>Borrowed:</strong> ${borrowedDate}</p>
-              <p class="card-text"><strong>Due Date:</strong> ${dueDate}</p>
+
+              <!-- Display shortened loan ID -->
+              <h5 class="card-title">
+                Loan #${loan._id.substring(0, 8)}
+              </h5>
+
+              <!-- Borrowed date -->
+              <p class="card-text">
+                <strong>Borrowed:</strong> ${borrowedDate}
+              </p>
+
+              <!-- Due date -->
+              <p class="card-text">
+                <strong>Due Date:</strong> ${dueDate}
+              </p>
+
+              <!-- Loan status badge -->
               <span class="badge ${loan.status === 'active' ? 'bg-primary' : 'bg-success'}">
                 ${loan.status === 'active' ? 'Active' : 'Returned'}
               </span>
+
+              <!-- Overdue badge (only shown if overdue) -->
               ${isOverdue ? '<span class="badge bg-danger ms-2">Overdue</span>' : ''}
+
+              <!-- Return book button (only for active loans) -->
               ${loan.status === 'active' ? `
-                <button class="btn btn-sm btn-success mt-2" onclick="returnBook('${loan._id}')">
+                <button class="btn btn-sm btn-success mt-2"
+                        onclick="returnBook('${loan._id}')">
                   <i class="bi bi-check-circle"></i> Return Book
                 </button>
               ` : ''}
+
             </div>
           </div>
         </div>
       `;
-    }).join('');
+    }).join(''); /* Combine all cards into one HTML string */
   }
   
-  // Frontend return book function
-  // This function is called when the user clicks the "Return Book" button
+  /* -------------------------------- */
+  /* Return Book Function (Frontend)  */
+  /* -------------------------------- */
+
+  /* Make the returnBook function globally accessible */
   window.returnBook = function(loanId) {
-    // Step 1: Confirm with the user before proceeding
-    // The confirm() dialog asks "Are you sure?" to prevent accidental returns
-    // Only proceed if the user clicks "OK" (returns true)
+
+    /* Ask the user for confirmation before returning the book */
     if (confirm("Are you sure you want to return this book?")) {
-      // Step 2: Send a POST request to the backend API
-      // The loanId tells the backend which loan to mark as returned
-      // The backend will update both the loan status AND the book's availability
+
+      /* Send POST request to backend to return the loan */
       fetch(`/api/loans/${loanId}/return`, {
         method: "POST"
       })
+
+      /* Convert response to JSON */
       .then(res => res.json())
+
+      /* Handle successful return */
       .then(data => {
-        // Step 3: After successful return, update the UI
-        // Show a success message to the user
+
+        /* Show confirmation message */
         alert("Book returned successfully!");
-        // Refresh the "My Loans" page to show the updated loan list
-        // This removes the returned book from the active loans display
+
+        /* Reload the loan list to reflect updated status */
         loadLoans();
-        // Step 4: Notify other pages that a book was returned
-        // Dispatch a custom event that the All Books page listens to
-        // This allows All Books to automatically refresh and show the book as "Available"
-        // Without this, All Books would still show "Borrowed" until the user manually refreshes
+
+        /* Notify other pages that a book has been returned */
         window.dispatchEvent(new CustomEvent('bookReturned'));
       })
+
+      /* Handle any errors */
       .catch(err => {
-        // If the API call fails, show an error message
         alert("Error returning book");
         console.error(err);
       });
     }
-    // If user clicks "Cancel" in the confirm dialog, nothing happens
-    // The function exits and no API call is made
+
+    /* If the user cancels, no action is taken */
   };
   
+  /* Load loans immediately when the page loads */
   loadLoans();
 });
 </script>
 {% endblock %}
-

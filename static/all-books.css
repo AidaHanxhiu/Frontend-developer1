@@ -1,70 +1,158 @@
-/* General body */
+/* ================================
+   General page styling
+   ================================ */
+
+/* Styles applied to the entire page */
 body {
-    background-color: #f8f9fa;
-    font-family: "Segoe UI", Arial, sans-serif;
-  }
-  
-  /* Page heading */
-  h1 {
-    color: #212529;
-    font-weight: 700;
-  }
-  
-  /* Filter card */
-  .filter-card {
-    border-radius: 10px;
-    border: none;
-  }
-  
-  /* Input and selects */
-  .form-control,
-  .form-select {
-    border-radius: 6px;
-  }
-  
-  /* Buttons */
-  .btn-dark {
-    background-color: #212529;
-    border: none;
-    font-weight: 500;
-  }
-  .btn-dark:hover {
-    background-color: #000;
-  }
-  
-  .btn-outline-dark.active {
-    background-color: #212529;
-    color: white;
-  }
-  
-  /* Grid spacing */
-  #booksGrid .card {
-    border-radius: 10px;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Badges for availability */
-  .badge-available {
-    background-color: #20c997;
-  }
-  .badge-borrowed {
-    background-color: #adb5bd;
-    color: #000;
-  }
-  
-  /* Footer */
-  footer {
-    font-size: 0.9rem;
-    background-color: #f1f3f5;
-    color: #212529;
-  }
-  
-  /* Links */
-  a {
-    color: #212529;
-    text-decoration: none;
-  }
-  a:hover {
-    text-decoration: underline;
-  }
+  /* Light gray background for a clean, modern look */
+  background-color: #f8f9fa;
+
+  /* Default font for the whole website */
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+
+/* ================================
+ Page heading
+ ================================ */
+
+/* Main page title */
+h1 {
+  /* Dark text color for good contrast */
+  color: #212529;
+
+  /* Makes the heading bold */
+  font-weight: 700;
+}
+
+
+/* ================================
+ Filter card styling
+ ================================ */
+
+/* Card used for filters/search options */
+.filter-card {
+  /* Rounded corners for a modern UI */
+  border-radius: 10px;
+
+  /* Removes default border */
+  border: none;
+}
+
+
+/* ================================
+ Form inputs & dropdowns
+ ================================ */
+
+/* Applies to text inputs and select dropdowns */
+.form-control,
+.form-select {
+  /* Slightly rounded corners */
+  border-radius: 6px;
+}
+
+
+/* ================================
+ Button styles
+ ================================ */
+
+/* Dark primary button */
+.btn-dark {
+  /* Dark background color */
+  background-color: #212529;
+
+  /* Removes default button border */
+  border: none;
+
+  /* Medium font weight for better readability */
+  font-weight: 500;
+}
+
+/* Hover effect for dark button */
+.btn-dark:hover {
+  /* Makes button fully black on hover */
+  background-color: #000;
+}
+
+/* Active state for outline dark buttons */
+.btn-outline-dark.active {
+  /* Fills button with dark background */
+  background-color: #212529;
+
+  /* Changes text color to white */
+  color: white;
+}
+
+
+/* ================================
+ Books grid & cards
+ ================================ */
+
+/* Individual book cards inside the grid */
+#booksGrid .card {
+  /* Rounded corners */
+  border-radius: 10px;
+
+  /* Removes default card border */
+  border: none;
+
+  /* Adds a soft shadow for depth */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* ================================
+ Availability badges
+ ================================ */
+
+/* Badge for available books */
+.badge-available {
+  /* Green color to indicate availability */
+  background-color: #20c997;
+}
+
+/* Badge for borrowed/unavailable books */
+.badge-borrowed {
+  /* Light gray background */
+  background-color: #adb5bd;
+
+  /* Dark text for contrast */
+  color: #000;
+}
+
+
+/* ================================
+ Footer styling
+ ================================ */
+
+/* Footer section at the bottom of the page */
+footer {
+  /* Slightly smaller text size */
+  font-size: 0.9rem;
+
+  /* Light gray background */
+  background-color: #f1f3f5;
+
+  /* Dark text color */
+  color: #212529;
+}
+
+
+/* ================================
+ Link styles
+ ================================ */
+
+/* Default link appearance */
+a {
+  /* Dark text color */
+  color: #212529;
+
+  /* Removes underline by default */
+  text-decoration: none;
+}
+
+/* Hover effect for links */
+a:hover {
+  /* Adds underline when hovered */
+  text-decoration: underline;
+}

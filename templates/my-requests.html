@@ -1,36 +1,65 @@
+{# Extend the base layout template (navbar, footer, shared layout) #}
 {% extends "base.html" %}
 
+{# Set the page title shown in the browser tab #}
 {% block title %}My Requests{% endblock %}
 
+{# Page-specific CSS block #}
 {% block extra_css %}
+<!-- Link to the main stylesheet for consistent styling -->
 <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 {% endblock %}
 
+{# Main content block #}
 {% block content %}
 
+<!-- Page heading -->
 <h1 class="mb-4">My Book Requests</h1>
 
-<!-- Request Form -->
+<!-- ===================== -->
+<!-- Book Request Form -->
+<!-- ===================== -->
 <div class="card mb-4">
+  <!-- Card header -->
   <div class="card-header">
     <h5 class="mb-0">Request a New Book</h5>
   </div>
+
+  <!-- Card body -->
   <div class="card-body">
+
+    <!-- Form for submitting a new book request -->
     <form id="requestForm">
+
+      <!-- Row for title and author inputs -->
       <div class="row">
+
+        <!-- Book title input column -->
         <div class="col-md-6 mb-3">
+          <!-- Label for book title -->
           <label for="bookTitle" class="form-label">Book Title *</label>
+          <!-- Book title input (required) -->
           <input type="text" class="form-control" id="bookTitle" required>
         </div>
+
+        <!-- Author input column -->
         <div class="col-md-6 mb-3">
+          <!-- Label for author -->
           <label for="author" class="form-label">Author</label>
+          <!-- Author input -->
           <input type="text" class="form-control" id="author">
         </div>
       </div>
+
+      <!-- Reason textarea -->
       <div class="mb-3">
+        <!-- Label for reason -->
         <label for="reason" class="form-label">Reason for Request</label>
+        <!-- Reason input -->
         <textarea class="form-control" id="reason" rows="3"></textarea>
       </div>
+
+      <!-- Submit button -->
       <button type="submit" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Submit Request
       </button>
@@ -38,16 +67,32 @@
   </div>
 </div>
 
-<!-- Requests List -->
+<!-- ===================== -->
+<!-- Requests List Section -->
+<!-- ===================== -->
 <div class="card">
+
+  <!-- Card header -->
   <div class="card-header">
     <h5 class="mb-0">My Requests</h5>
   </div>
+
+  <!-- Card body -->
   <div class="card-body">
+
+    <!-- Container for request list -->
     <div id="requestsList">
+
+      {# Check if the user has any requests #}
       {% if requests %}
+
+      <!-- Make table horizontally scrollable on small screens -->
       <div class="table-responsive">
+
+        <!-- Requests table -->
         <table class="table">
+
+          <!-- Table header -->
           <thead>
             <tr>
               <th>Book Title</th>
@@ -57,11 +102,21 @@
               <th>Actions</th>
             </tr>
           </thead>
+
+          <!-- Table body -->
           <tbody>
+
+            {# Loop through each request #}
             {% for request in requests %}
             <tr>
+
+              <!-- Requested book title -->
               <td>{{ request.book_title }}</td>
+
+              <!-- Requested author or fallback -->
               <td>{{ request.author or 'N/A' }}</td>
+
+              <!-- Request status -->
               <td>
                 {% if request.status == 'pending' %}
                 <span class="badge bg-warning text-dark">Pending</span>
@@ -71,37 +126,58 @@
                 <span class="badge bg-danger">Rejected</span>
                 {% endif %}
               </td>
-              <td>{{ request.created_at.strftime('%Y-%m-%d') if request.created_at else 'N/A' }}</td>
+
+              <!-- Request creation date -->
+              <td>
+                {{ request.created_at.strftime('%Y-%m-%d') if request.created_at else 'N/A' }}
+              </td>
+
+              <!-- Action buttons -->
               <td>
                 {% if request.status == 'pending' %}
-                <button class="btn btn-sm btn-danger" onclick="deleteRequest('{{ request._id }}')">
+                <!-- Cancel request button -->
+                <button class="btn btn-sm btn-danger"
+                        onclick="deleteRequest('{{ request._id }}')">
                   <i class="bi bi-trash"></i> Cancel
                 </button>
                 {% endif %}
               </td>
             </tr>
             {% endfor %}
+
           </tbody>
         </table>
       </div>
+
       {% else %}
-      <p class="text-muted">No requests yet. Submit a request above to get started!</p>
+      <!-- Message when no requests exist -->
+      <p class="text-muted">
+        No requests yet. Submit a request above to get started!
+      </p>
       {% endif %}
     </div>
   </div>
 </div>
 
+{# End of main content block #}
 {% endblock %}
 
+{# Page-specific JavaScript block #}
 {% block extra_js %}
 <script>
+/* Run JavaScript after the DOM has fully loaded */
 document.addEventListener("DOMContentLoaded", function() {
-  // Helper function to get JWT token from localStorage
+
+  /* ----------------------------- */
+  /* Authentication Helper Methods */
+  /* ----------------------------- */
+
+  /* Retrieve JWT token from localStorage */
   function getAuthToken() {
     return localStorage.getItem("access_token");
   }
   
-  // Helper function to create headers with JWT token
+  /* Build request headers including JWT token */
   function getAuthHeaders() {
     const token = getAuthToken();
     const headers = { "Content-Type": "application/json" };
@@ -111,48 +187,81 @@ document.addEventListener("DOMContentLoaded", function() {
     return headers;
   }
   
+  /* Get reference to the request form */
   const requestForm = document.getElementById("requestForm");
   
+  /* Handle request form submission */
   requestForm.addEventListener("submit", function(e) {
+
+    /* Prevent default form submission */
     e.preventDefault();
+
+    /* Read form input values */
     const bookTitle = document.getElementById("bookTitle").value;
     const author = document.getElementById("author").value;
     const reason = document.getElementById("reason").value;
     
+    /* Send POST request to create a new request */
     fetch("/api/requests", {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ book_title: bookTitle, author, reason })
+      body: JSON.stringify({
+        book_title: bookTitle,
+        author,
+        reason
+      })
     })
+
+    /* Convert response to JSON */
     .then(res => res.json())
+
+    /* Handle success */
     .then(data => {
       alert("Request submitted successfully!");
       location.reload();
     })
+
+    /* Handle errors */
     .catch(err => {
       alert("Error submitting request");
       console.error(err);
     });
   });
   
+  /* ----------------------------- */
+  /* Delete (Cancel) Request Logic */
+  /* ----------------------------- */
+
+  /* Make deleteRequest globally accessible */
   window.deleteRequest = function(requestId) {
+
+    /* Ask for confirmation before cancelling */
     if (confirm("Are you sure you want to cancel this request?")) {
+
+      /* Send DELETE request to backend */
       fetch(`/api/requests/${requestId}`, {
         method: "DELETE",
         headers: getAuthHeaders()
       })
+
+      /* Convert response to JSON */
       .then(res => res.json())
+
+      /* Handle success */
       .then(data => {
         alert("Request cancelled");
         location.reload();
       })
+
+      /* Handle errors */
       .catch(err => {
         alert("Error cancelling request");
         console.error(err);
       });
     }
+
+    /* If user clicks Cancel, nothing happens */
   };
 });
 </script>
 {% endblock %}
-

@@ -45,16 +45,16 @@ jwt = JWTManager(app)
 # ------------------------------
 # MONGODB CONNECTION
 # ------------------------------
-# Connect to MongoDB database using the connection string from .env file
-# MongoDB stores all our data: users, books, loans, wishlists, etc.
-mongodb_uri = os.getenv("MONGODB_URI")
-if not mongodb_uri:
-    raise ValueError("MONGODB_URI environment variable is not set. Please check your .env file.")
-# Remove quotes if present (sometimes .env files have quotes around values)
-mongodb_uri = mongodb_uri.strip().strip('"').strip("'")
-app.config["MONGO_URI"] = mongodb_uri
-# PyMongo is a Flask extension that makes it easy to use MongoDB
-mongo = PyMongo(app)
+try:
+    mongodb_uri = os.getenv("MONGODB_URI")
+    if not mongodb_uri:
+        raise ValueError("MONGODB_URI environment variable is not set. Please check your .env file.")
+    mongodb_uri = mongodb_uri.strip().strip('"').strip("'")
+    app.config["MONGO_URI"] = mongodb_uri
+    mongo = PyMongo(app)
+except Exception as e:
+    logging.error(f"Failed to connect to MongoDB: {str(e)}")
+    mongo = None  # Set mongo to None if connection fails
 
 # ------------------------------
 # ENSURE REQUIRED COLLECTIONS EXIST
@@ -120,6 +120,5 @@ if __name__ == "__main__":
         # The app will be accessible at http://127.0.0.1:5001
         app.run(debug=True, port=port)
     except OSError:
-        # If port 5001 is already in use, try the next port (5002)
-        # This prevents errors when the port is busy
+        logging.warning(f"Port {port} is in use. Trying port {port + 1}.")
         app.run(debug=True, port=port + 1)

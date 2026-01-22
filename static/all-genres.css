@@ -1,7 +1,32 @@
-body { background:#598fc5; font-family:"Segoe UI", Arial, sans-serif; }
-h1 { color:#212529; }
-.genre-card { border:none; border-radius:10px; transition:transform .2s; }
-.genre-card:hover { transform:scale(1.03); }
-.btn-dark { background:#446b92; border:none; }
-.btn-dark:hover { background:#000; }
-footer { font-size:.9rem; }
+body {
+    background: #497caf;                 /* Set page background color */
+    font-family: "Segoe UI", Arial, sans-serif; /* Set default font with fallback */
+  }
+  
+  h1 {
+    color: #a7c4e1;                      /* Set heading text color */
+  }
+  
+  .genre-card {
+    border: none;                        /* Remove border */
+    border-radius: 10px;                 /* Round card corners */
+    transition: transform .2s;           /* Smooth animation on transform */
+  }
+  
+  .genre-card:hover {
+    transform: scale(1.03);              /* Slightly enlarge card on hover */
+  }
+  
+  .btn-dark {
+    background: #212529;                 /* Dark button background */
+    border: none;                        /* Remove button border */
+  }
+  
+  .btn-dark:hover {
+    background: #000;                    /* Darker background on hover */
+  }
+  
+  footer {
+    font-size: .9rem;                    /* Slightly smaller footer text */
+  }
+  

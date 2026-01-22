@@ -1,53 +1,57 @@
 /* General page styling */
 body {
-  background-color: #f8f9fa;
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #212529;
+  background-color: #f8f9fa;          /* Light background */
+  font-family: "Segoe UI", Arial, sans-serif; /* Default font */
+  color: #212529;                     /* Main text color */
 }
 
-/* Heading */
+/* Page heading */
 h1 {
-  color: #212529;
+  color: #212529;                     /* Dark heading color */
 }
 
 /* Borrowed book cards */
 #loansList .card {
-  border: none;
-  border-radius: 10px;
-  background-color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease-in-out;
+  border: none;                       /* Remove border */
+  border-radius: 10px;                /* Rounded corners */
+  background-color: #ffffff;          /* White background */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08); /* Soft shadow */
+  transition: transform 0.2s ease-in-out; /* Smooth hover effect */
 }
 
+/* Card hover effect */
 #loansList .card:hover {
-  transform: scale(1.02);
+  transform: scale(1.02);             /* Slight zoom on hover */
 }
 
 /* Return button */
 .btn-return {
-  background-color: #dc3545;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 12px;
-  font-size: 0.9rem;
+  background-color: #dc3545;          /* Red background */
+  color: #fff;                        /* White text */
+  border: none;                       /* No border */
+  border-radius: 5px;                 /* Rounded corners */
+  padding: 5px 12px;                  /* Button spacing */
+  font-size: 0.9rem;                  /* Smaller text */
 }
+
+/* Return button hover */
 .btn-return:hover {
-  background-color: #b02a37;
+  background-color: #b02a37;          /* Darker red on hover */
 }
 
 /* Footer */
 footer {
-  font-size: 0.9rem;
-  background-color: #f1f3f5;
-  color: #212529;
+  font-size: 0.9rem;                  /* Small footer text */
+  background-color: #f1f3f5;          /* Light footer background */
+  color: #212529;                     /* Text color */
 }
 
 /* Links */
 a {
-  color: #212529;
-  text-decoration: none;
+  color: #212529;                     /* Link color */
+  text-decoration: none;              /* Remove underline */
 }
+
 a:hover {
-  text-decoration: underline;
+  text-decoration: underline;         /* Underline on hover */
 }

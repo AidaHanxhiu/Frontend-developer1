@@ -1,52 +1,70 @@
-/* General look */
-body {
-    background-color: #3b8cde;
-    font-family: "Segoe UI", Arial, sans-serif;
+/* =========================
+   GENERAL PAGE STYLING
+   ========================= */
+   body {
+    background-color: #f8f9fa;               /* Light gray background for the page */
+    font-family: "Segoe UI", Arial, sans-serif; /* Default font with fallback */
   }
   
-  /* Center the card nicely */
+  /* =========================
+     LOGIN CARD STYLING
+     ========================= */
   .login-card {
-    border-radius: 12px;
-    border: none;
+    border-radius: 12px;                     /* Rounded corners for the login card */
+    border: none;                            /* Remove default border */
   }
   
-  /* Heading icon */
+  /* =========================
+     HEADING ICON
+     ========================= */
   .icon-lg {
-    font-size: 48px;
+    font-size: 48px;                         /* Large icon size */
   }
   
-  /* Form labels */
+  /* =========================
+     FORM LABELS
+     ========================= */
   .form-label {
-    font-weight: 500;
+    font-weight: 500;                       /* Medium-weight label text */
   }
   
-  /* Buttons */
+  /* =========================
+     BUTTON STYLING
+     ========================= */
   .btn-dark {
-    background-color: #212529;
-    border: none;
+    background-color: #212529;              /* Dark button background */
+    border: none;                           /* Remove button border */
   }
+  
   .btn-dark:hover {
-    background-color: #000;
+    background-color: #000;                 /* Darker background on hover */
   }
   
-  /* Footer text */
+  /* =========================
+     FOOTER
+     ========================= */
   footer {
-    font-size: 0.9rem;
+    font-size: 0.9rem;                      /* Slightly smaller footer text */
   }
   
-  /* Demo info box */
+  /* =========================
+     DEMO INFORMATION BOX
+     ========================= */
   .demo-info {
-    background: #f1f3f5;
-    padding: 10px;
-    border-radius: 8px;
+    background: #f1f3f5;                    /* Light gray background */
+    padding: 10px;                          /* Inner spacing */
+    border-radius: 8px;                     /* Rounded corners */
   }
   
-  /* Links */
+  /* =========================
+     LINKS
+     ========================= */
   a {
-    color: #212529;
-    text-decoration: none;
+    color: #212529;                         /* Dark link color */
+    text-decoration: none;                  /* Remove underline */
   }
+  
   a:hover {
-    text-decoration: underline;
+    text-decoration: underline;             /* Underline on hover */
   }
   

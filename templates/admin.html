@@ -1,113 +1,124 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {# Use base.html layout #}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Dashboard{% endblock %} {# Page title #}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"> <!-- Admin CSS -->
 {% endblock %}
 
 {% block content %}
 
-<h1 class="mb-4">Admin Dashboard</h1>
+<h1 class="mb-4">Admin Dashboard</h1> <!-- Main heading -->
 
 <!-- Stats Cards -->
-<section class="mb-4">
-  <div class="row">
-    <div class="col-md-3 mb-3">
-      <div class="card text-center">
-        <div class="card-body">
-          <h5 class="card-title">Inventory</h5>
-          <h2 class="text-primary">{{ stats.total_books }}</h2>
+<section class="mb-4"> <!-- Stats section -->
+  <div class="row"> <!-- Bootstrap grid row -->
+
+    <div class="col-md-3 mb-3"> <!-- 1/4 width column -->
+      <div class="card text-center"> <!-- Card -->
+        <div class="card-body"> <!-- Card content -->
+          <h5 class="card-title">Inventory</h5> <!-- Label -->
+          <h2 class="text-primary">{{ stats.total_books }}</h2> <!-- Total books -->
         </div>
       </div>
     </div>
-    <div class="col-md-3 mb-3">
+
+    <div class="col-md-3 mb-3"> <!-- 1/4 width column -->
       <div class="card text-center">
         <div class="card-body">
-          <h5 class="card-title">Available</h5>
-          <h2 class="text-success">{{ stats.available_books }}</h2>
+          <h5 class="card-title">Available</h5> <!-- Label -->
+          <h2 class="text-success">{{ stats.available_books }}</h2> <!-- Available count -->
         </div>
       </div>
     </div>
-    <div class="col-md-3 mb-3">
+
+    <div class="col-md-3 mb-3"> <!-- 1/4 width column -->
       <div class="card text-center">
         <div class="card-body">
-          <h5 class="card-title">Borrowed</h5>
-          <h2 class="text-warning">{{ stats.borrowed_books }}</h2>
+          <h5 class="card-title">Borrowed</h5> <!-- Label -->
+          <h2 class="text-warning">{{ stats.borrowed_books }}</h2> <!-- Borrowed count -->
         </div>
       </div>
     </div>
-    <div class="col-md-3 mb-3">
+
+    <div class="col-md-3 mb-3"> <!-- 1/4 width column -->
       <div class="card text-center">
         <div class="card-body">
-          <h5 class="card-title">Total Users</h5>
-          <h2 class="text-info">{{ stats.total_users }}</h2>
+          <h5 class="card-title">Total Users</h5> <!-- Label -->
+          <h2 class="text-info">{{ stats.total_users }}</h2> <!-- Users count -->
         </div>
       </div>
     </div>
+
   </div>
 </section>
 
 <!-- Tabs for Books and Users -->
-<ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
-  <li class="nav-item" role="presentation">
+<ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist"> <!-- Tabs container -->
+  <li class="nav-item" role="presentation"> <!-- Tab item -->
     <button class="nav-link active" id="books-tab" data-bs-toggle="tab" data-bs-target="#books" type="button" role="tab">
-      <i class="bi bi-book"></i> Books Management
+      <i class="bi bi-book"></i> Books Management <!-- Books tab -->
     </button>
   </li>
-  <li class="nav-item" role="presentation">
+  <li class="nav-item" role="presentation"> <!-- Tab item -->
     <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
-      <i class="bi bi-people"></i> Users Management
+      <i class="bi bi-people"></i> Users Management <!-- Users tab -->
     </button>
   </li>
 </ul>
 
-<div class="tab-content" id="adminTabContent">
+<div class="tab-content" id="adminTabContent"> <!-- Tab panels wrapper -->
+
   <!-- Books Tab -->
-  <div class="tab-pane fade show active" id="books" role="tabpanel">
+  <div class="tab-pane fade show active" id="books" role="tabpanel"> <!-- Books panel -->
+
     <!-- Add Book Form -->
-    <div class="card mb-4">
+    <div class="card mb-4"> <!-- Form card -->
       <div class="card-header">
-        <h5 class="mb-0">Add New Book</h5>
+        <h5 class="mb-0">Add New Book</h5> <!-- Form title -->
       </div>
       <div class="card-body">
-        <form id="addBookForm">
-          <div class="row">
+        <form id="addBookForm"> <!-- Form used by JS -->
+
+          <div class="row"> <!-- Row: Title + Author -->
             <div class="col-md-6 mb-3">
-              <label for="bTitle" class="form-label">Title *</label>
-              <input type="text" class="form-control" id="bTitle" required>
+              <label for="bTitle" class="form-label">Title *</label> <!-- Label -->
+              <input type="text" class="form-control" id="bTitle" required> <!-- Title input -->
             </div>
             <div class="col-md-6 mb-3">
-              <label for="bAuthor" class="form-label">Author *</label>
-              <input type="text" class="form-control" id="bAuthor" required>
+              <label for="bAuthor" class="form-label">Author *</label> <!-- Label -->
+              <input type="text" class="form-control" id="bAuthor" required> <!-- Author input -->
             </div>
           </div>
-          <div class="row">
+
+          <div class="row"> <!-- Row: Year/ISBN/Genre/Available -->
             <div class="col-md-3 mb-3">
               <label for="bYear" class="form-label">Year</label>
-              <input type="number" class="form-control" id="bYear">
+              <input type="number" class="form-control" id="bYear"> <!-- Year input -->
             </div>
             <div class="col-md-3 mb-3">
               <label for="bISBN" class="form-label">ISBN</label>
-              <input type="text" class="form-control" id="bISBN">
+              <input type="text" class="form-control" id="bISBN"> <!-- ISBN input -->
             </div>
             <div class="col-md-3 mb-3">
               <label for="bGenre" class="form-label">Genre</label>
-              <input type="text" class="form-control" id="bGenre">
+              <input type="text" class="form-control" id="bGenre"> <!-- Genre input -->
             </div>
             <div class="col-md-3 mb-3">
               <label for="bAvail" class="form-label">Available</label>
-              <select class="form-select" id="bAvail">
-                <option value="true">Yes</option>
-                <option value="false">No</option>
+              <select class="form-select" id="bAvail"> <!-- Availability select -->
+                <option value="true">Yes</option> <!-- Available -->
+                <option value="false">No</option> <!-- Not available -->
               </select>
             </div>
           </div>
+
           <div class="mb-3">
             <label for="bDesc" class="form-label">Description</label>
-            <textarea class="form-control" id="bDesc" rows="3"></textarea>
+            <textarea class="form-control" id="bDesc" rows="3"></textarea> <!-- Description -->
           </div>
-          <button type="submit" class="btn btn-primary">
+
+          <button type="submit" class="btn btn-primary"> <!-- Submit form -->
             <i class="bi bi-plus-circle"></i> Add Book
           </button>
         </form>
@@ -115,48 +126,50 @@
     </div>
 
     <!-- Books List -->
-    <div class="card">
+    <div class="card"> <!-- Table card -->
       <div class="card-header">
-        <h5 class="mb-0">All Books</h5>
+        <h5 class="mb-0">All Books</h5> <!-- Table title -->
       </div>
       <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-striped">
+        <div class="table-responsive"> <!-- Responsive table -->
+          <table class="table table-striped"> <!-- Bootstrap table -->
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Author</th>
-                <th>Year</th>
-                <th>Genre</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Title</th> <!-- Column -->
+                <th>Author</th> <!-- Column -->
+                <th>Year</th> <!-- Column -->
+                <th>Genre</th> <!-- Column -->
+                <th>Status</th> <!-- Column -->
+                <th>Actions</th> <!-- Column -->
               </tr>
             </thead>
-            <tbody id="booksTableBody">
-              {% for book in books %}
-              <tr id="book-{{ book._id }}">
-                <td>{{ book.title }}</td>
-                <td>{{ book.author }}</td>
-                <td>{{ book.year or 'N/A' }}</td>
-                <td>{{ book.genre or 'N/A' }}</td>
+
+            <tbody id="booksTableBody"> <!-- Body filled by Jinja -->
+              {% for book in books %} <!-- Loop books -->
+              <tr id="book-{{ book._id }}"> <!-- Unique row id -->
+                <td>{{ book.title }}</td> <!-- Title -->
+                <td>{{ book.author }}</td> <!-- Author -->
+                <td>{{ book.year or 'N/A' }}</td> <!-- Year or N/A -->
+                <td>{{ book.genre or 'N/A' }}</td> <!-- Genre or N/A -->
                 <td>
-                  {% if book.available %}
-                  <span class="badge bg-success">Available</span>
-                  {% else %}
-                  <span class="badge bg-secondary">Borrowed</span>
+                  {% if book.available %} <!-- If available -->
+                  <span class="badge bg-success">Available</span> <!-- Green badge -->
+                  {% else %} <!-- Else borrowed -->
+                  <span class="badge bg-secondary">Borrowed</span> <!-- Gray badge -->
                   {% endif %}
                 </td>
                 <td>
-                  <button class="btn btn-sm btn-warning" onclick="editBook('{{ book._id }}')">
+                  <button class="btn btn-sm btn-warning" onclick="editBook('{{ book._id }}')"> <!-- Open edit modal -->
                     <i class="bi bi-pencil"></i> Edit
                   </button>
-                  <button class="btn btn-sm btn-danger" onclick="deleteBook('{{ book._id }}')">
+                  <button class="btn btn-sm btn-danger" onclick="deleteBook('{{ book._id }}')"> <!-- Delete book -->
                     <i class="bi bi-trash"></i> Delete
                   </button>
                 </td>
               </tr>
-              {% endfor %}
+              {% endfor %} <!-- End loop -->
             </tbody>
+
           </table>
         </div>
       </div>
@@ -164,39 +177,45 @@
   </div>
 
   <!-- Users Tab -->
-  <div class="tab-pane fade" id="users" role="tabpanel">
+  <div class="tab-pane fade" id="users" role="tabpanel"> <!-- Users panel -->
     <div class="card">
       <div class="card-header">
-        <h5 class="mb-0">All Users</h5>
+        <h5 class="mb-0">All Users</h5> <!-- Table title -->
       </div>
       <div class="card-body">
         <div class="table-responsive">
           <table class="table table-striped">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Actions</th>
+                <th>Name</th> <!-- Column -->
+                <th>Email</th> <!-- Column -->
+                <th>Role</th> <!-- Column -->
+                <th>Actions</th> <!-- Column -->
               </tr>
             </thead>
+
             <tbody id="usersTableBody">
-              {% for user in users %}
-              <tr id="user-{{ user._id }}">
-                <td>{{ user.first_name }} {{ user.last_name }}</td>
-                <td>{{ user.email }}</td>
-                <td><span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' }}">{{ user.role }}</span></td>
+              {% for user in users %} <!-- Loop users -->
+              <tr id="user-{{ user._id }}"> <!-- Unique row id -->
+                <td>{{ user.first_name }} {{ user.last_name }}</td> <!-- Full name -->
+                <td>{{ user.email }}</td> <!-- Email -->
                 <td>
-                  <button class="btn btn-sm btn-warning" onclick="editUser('{{ user._id }}')">
+                  <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' }}">
+                    {{ user.role }} <!-- Role text -->
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-warning" onclick="editUser('{{ user._id }}')"> <!-- Not implemented -->
                     <i class="bi bi-pencil"></i> Edit
                   </button>
-                  <button class="btn btn-sm btn-danger" onclick="deleteUser('{{ user._id }}')">
+                  <button class="btn btn-sm btn-danger" onclick="deleteUser('{{ user._id }}')"> <!-- Delete user -->
                     <i class="bi bi-trash"></i> Delete
                   </button>
                 </td>
               </tr>
-              {% endfor %}
+              {% endfor %} <!-- End loop -->
             </tbody>
+
           </table>
         </div>
       </div>
@@ -205,35 +224,35 @@
 </div>
 
 <!-- Edit Book Modal -->
-<div class="modal fade" id="editBookModal" tabindex="-1">
+<div class="modal fade" id="editBookModal" tabindex="-1"> <!-- Hidden modal -->
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Edit Book</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title">Edit Book</h5> <!-- Modal title -->
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button> <!-- Close -->
       </div>
       <div class="modal-body">
-        <form id="editBookForm">
-          <input type="hidden" id="editBookId">
+        <form id="editBookForm"> <!-- Modal form -->
+          <input type="hidden" id="editBookId"> <!-- Store book id -->
           <div class="mb-3">
             <label for="editTitle" class="form-label">Title</label>
-            <input type="text" class="form-control" id="editTitle" required>
+            <input type="text" class="form-control" id="editTitle" required> <!-- Edit title -->
           </div>
           <div class="mb-3">
             <label for="editAuthor" class="form-label">Author</label>
-            <input type="text" class="form-control" id="editAuthor" required>
+            <input type="text" class="form-control" id="editAuthor" required> <!-- Edit author -->
           </div>
           <div class="mb-3">
             <label for="editYear" class="form-label">Year</label>
-            <input type="number" class="form-control" id="editYear">
+            <input type="number" class="form-control" id="editYear"> <!-- Edit year -->
           </div>
           <div class="mb-3">
             <label for="editGenre" class="form-label">Genre</label>
-            <input type="text" class="form-control" id="editGenre">
+            <input type="text" class="form-control" id="editGenre"> <!-- Edit genre -->
           </div>
           <div class="mb-3">
             <label for="editAvailable" class="form-label">Available</label>
-            <select class="form-select" id="editAvailable">
+            <select class="form-select" id="editAvailable"> <!-- Edit availability -->
               <option value="true">Yes</option>
               <option value="false">No</option>
             </select>
@@ -241,8 +260,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="saveBook()">Save Changes</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button> <!-- Close modal -->
+        <button type="button" class="btn btn-primary" onclick="saveBook()">Save Changes</button> <!-- Save -->
       </div>
     </div>
   </div>
@@ -252,116 +271,115 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  // Add Book Form
+document.addEventListener("DOMContentLoaded", function() { // Run after page loads
+
+  // Add Book Form submit handler
   document.getElementById("addBookForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const bookData = {
-      title: document.getElementById("bTitle").value,
-      author: document.getElementById("bAuthor").value,
-      year: parseInt(document.getElementById("bYear").value) || null,
-      isbn: document.getElementById("bISBN").value,
-      genre: document.getElementById("bGenre").value,
-      description: document.getElementById("bDesc").value,
-      available: document.getElementById("bAvail").value === "true"
+    e.preventDefault(); // Stop page reload
+
+    const bookData = { // Collect form inputs
+      title: document.getElementById("bTitle").value, // Title
+      author: document.getElementById("bAuthor").value, // Author
+      year: parseInt(document.getElementById("bYear").value) || null, // Year (number/null)
+      isbn: document.getElementById("bISBN").value, // ISBN
+      genre: document.getElementById("bGenre").value, // Genre
+      description: document.getElementById("bDesc").value, // Description
+      available: document.getElementById("bAvail").value === "true" // "true"/"false" -> boolean
     };
-    
-    fetch("/api/books", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bookData)
+
+    fetch("/api/books", { // Create book request
+      method: "POST", // POST = create
+      headers: { "Content-Type": "application/json" }, // Send JSON
+      body: JSON.stringify(bookData) // Convert object -> JSON
     })
-    .then(res => res.json())
+    .then(res => res.json()) // Read response JSON
     .then(data => {
-      alert("Book added successfully!");
-      location.reload();
+      alert("Book added successfully!"); // Success message
+      location.reload(); // Refresh list
     })
     .catch(err => {
-      alert("Error adding book");
-      console.error(err);
+      alert("Error adding book"); // Error message
+      console.error(err); // Log error
     });
   });
 });
 
-function editBook(bookId) {
-  fetch(`/api/books/${bookId}`)
-    .then(res => res.json())
+function editBook(bookId) { // Open edit modal for selected book
+  fetch(`/api/books/${bookId}`) // GET book details
+    .then(res => res.json()) // Convert to JSON
     .then(book => {
-      document.getElementById("editBookId").value = bookId;
-      document.getElementById("editTitle").value = book.title || "";
-      document.getElementById("editAuthor").value = book.author || "";
-      document.getElementById("editYear").value = book.year || "";
-      document.getElementById("editGenre").value = book.genre || "";
-      document.getElementById("editAvailable").value = book.available ? "true" : "false";
-      
-      const modal = new bootstrap.Modal(document.getElementById("editBookModal"));
-      modal.show();
+      document.getElementById("editBookId").value = bookId; // Save id
+      document.getElementById("editTitle").value = book.title || ""; // Fill title
+      document.getElementById("editAuthor").value = book.author || ""; // Fill author
+      document.getElementById("editYear").value = book.year || ""; // Fill year
+      document.getElementById("editGenre").value = book.genre || ""; // Fill genre
+      document.getElementById("editAvailable").value = book.available ? "true" : "false"; // Fill availability
+
+      const modal = new bootstrap.Modal(document.getElementById("editBookModal")); // Create modal
+      modal.show(); // Show modal
     })
     .catch(err => {
-      alert("Error loading book");
-      console.error(err);
+      alert("Error loading book"); // Error message
+      console.error(err); // Log error
     });
 }
 
-function saveBook() {
-  const bookId = document.getElementById("editBookId").value;
-  const bookData = {
+function saveBook() { // Save changes from modal
+  const bookId = document.getElementById("editBookId").value; // Get id
+
+  const bookData = { // Updated values
     title: document.getElementById("editTitle").value,
     author: document.getElementById("editAuthor").value,
     year: parseInt(document.getElementById("editYear").value) || null,
     genre: document.getElementById("editGenre").value,
     available: document.getElementById("editAvailable").value === "true"
   };
-  
-  fetch(`/api/books/${bookId}`, {
-    method: "PUT",
+
+  fetch(`/api/books/${bookId}`, { // Update book request
+    method: "PUT", // PUT = update
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(bookData)
   })
   .then(res => res.json())
   .then(data => {
-    alert("Book updated successfully!");
-    location.reload();
+    alert("Book updated successfully!"); // Success
+    location.reload(); // Refresh list
   })
   .catch(err => {
-    alert("Error updating book");
+    alert("Error updating book"); // Error
     console.error(err);
   });
 }
 
-function deleteBook(bookId) {
-  if (confirm("Are you sure you want to delete this book?")) {
-    fetch(`/api/books/${bookId}`, {
-      method: "DELETE"
-    })
+function deleteBook(bookId) { // Delete a book
+  if (confirm("Are you sure you want to delete this book?")) { // Confirm first
+    fetch(`/api/books/${bookId}`, { method: "DELETE" }) // DELETE request
     .then(res => res.json())
     .then(data => {
-      alert("Book deleted successfully!");
-      location.reload();
+      alert("Book deleted successfully!"); // Success
+      location.reload(); // Refresh
     })
     .catch(err => {
-      alert("Error deleting book");
+      alert("Error deleting book"); // Error
       console.error(err);
     });
   }
 }
 
-function editUser(userId) {
-  alert("User editing feature - implement as needed");
+function editUser(userId) { // User edit placeholder
+  alert("User editing feature - implement as needed"); // Not implemented
 }
 
-function deleteUser(userId) {
-  if (confirm("Are you sure you want to delete this user?")) {
-    fetch(`/api/users/${userId}`, {
-      method: "DELETE"
-    })
+function deleteUser(userId) { // Delete a user
+  if (confirm("Are you sure you want to delete this user?")) { // Confirm first
+    fetch(`/api/users/${userId}`, { method: "DELETE" }) // DELETE request
     .then(res => res.json())
     .then(data => {
-      alert("User deleted successfully!");
-      location.reload();
+      alert("User deleted successfully!"); // Success
+      location.reload(); // Refresh list
     })
     .catch(err => {
-      alert("Error deleting user");
+      alert("Error deleting user"); // Error
       console.error(err);
     });
   }

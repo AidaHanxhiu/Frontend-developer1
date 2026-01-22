@@ -1,177 +1,169 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {# Use base template layout #}
 
-{% block title %}All Books{% endblock %}
+{% block title %}All Books{% endblock %} {# Page title #}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='all-books.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='all-books.css') }}"> <!-- Page CSS -->
 {% endblock %}
 
 {% block content %}
 
-<h1 class="mb-4">Search Books</h1>
+<h1 class="mb-4">Search Books</h1> <!-- Page heading -->
 
-<!-- Filter Card -->
-<div class="card mb-4">
-  <div class="card-body">
-    <form id="filterForm" class="row g-3">
-      <div class="col-md-4">
-        <label for="search" class="form-label">Search</label>
-        <input type="text" class="form-control" id="search" placeholder="Search by title or author...">
+<!-- ===================== FILTER CARD ===================== -->
+<div class="card mb-4"> <!-- Filter container card -->
+  <div class="card-body"> <!-- Card padding -->
+    <form id="filterForm" class="row g-3"> <!-- Filter form (Bootstrap grid) -->
+
+      <div class="col-md-4"> <!-- Search input column -->
+        <label for="search" class="form-label">Search</label> <!-- Label -->
+        <input type="text" class="form-control" id="search" placeholder="Search by title or author..."> <!-- Input -->
       </div>
-      <div class="col-md-3">
+
+      <div class="col-md-3"> <!-- Genre dropdown column -->
         <label for="genre" class="form-label">Genre</label>
-        <select class="form-select" id="genre">
-          <option value="">All Genres</option>
-          {% for genre in genres %}
-          <option value="{{ genre.name }}">{{ genre.name }}</option>
+        <select class="form-select" id="genre"> <!-- Genre select -->
+          <option value="">All Genres</option> <!-- Default -->
+          {% for genre in genres %} <!-- Loop genres from backend -->
+          <option value="{{ genre.name }}">{{ genre.name }}</option> <!-- Genre option -->
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
+
+      <div class="col-md-3"> <!-- Language dropdown column -->
         <label for="lang" class="form-label">Language</label>
-        <select class="form-select" id="lang">
-          <option value="">All Languages</option>
+        <select class="form-select" id="lang"> <!-- Language select -->
+          <option value="">All Languages</option> <!-- Default -->
           <option value="English">English</option>
           <option value="Albanian">Albanian</option>
           <option value="Spanish">Spanish</option>
           <option value="French">French</option>
         </select>
       </div>
-      <div class="col-md-2">
-        <label class="form-label">&nbsp;</label>
-        <button type="submit" class="btn btn-dark w-100">Filter</button>
+
+      <div class="col-md-2"> <!-- Filter button column -->
+        <label class="form-label">&nbsp;</label> <!-- Keeps button aligned -->
+        <button type="submit" class="btn btn-dark w-100">Filter</button> <!-- Submit filter -->
       </div>
-      <div class="col-12">
-        <div class="btn-group" role="group">
-          <button type="button" class="btn btn-outline-dark active" id="tabAll">All Books</button>
-          <button type="button" class="btn btn-outline-dark" id="tabAvail">Available Only</button>
+
+      <div class="col-12"> <!-- Tabs row -->
+        <div class="btn-group" role="group"> <!-- Toggle buttons -->
+          <button type="button" class="btn btn-outline-dark active" id="tabAll">All Books</button> <!-- All tab -->
+          <button type="button" class="btn btn-outline-dark" id="tabAvail">Available Only</button> <!-- Available tab -->
         </div>
       </div>
+
     </form>
   </div>
 </div>
 
-<!-- Books Grid -->
+<!-- ===================== BOOKS GRID ===================== -->
 <div class="row" id="booksGrid">
-  <!-- Books will be loaded here -->
+  <!-- Books are injected here by JS -->
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  let currentFilter = "all";
-  
-  // Function to load books from the API
-  // This function fetches books from the backend and displays them
-  // It supports filtering by availability, search term, genre, and language
+document.addEventListener("DOMContentLoaded", function() { // Run after page loads
+
+  let currentFilter = "all"; // Track active filter tab ("all" or "available")
+
+  // Load books from the API using filter + query params
   function loadBooks(filter = "all", search = "", genre = "", lang = "") {
-    // Build the API URL with query parameters
-    let url = "/api/books?";
-    // If filter is "available", only fetch books where available=True
-    // This is used by the "Available Only" tab
-    if (filter === "available") url += "available=true&";
-    if (search) url += `search=${encodeURIComponent(search)}&`;
-    if (genre) url += `genre=${encodeURIComponent(genre)}&`;
-    if (lang) url += `language=${encodeURIComponent(lang)}&`;
-    
-    // Fetch books from the backend API
-    // The API returns a JSON object with a "books" array
-    // Each book object contains: _id, title, author, year, genre, available, etc.
-    fetch(url)
-      .then(res => res.json())
+
+    let url = "/api/books?"; // Base endpoint
+
+    if (filter === "available") url += "available=true&"; // Only available books
+    if (search) url += `search=${encodeURIComponent(search)}&`; // Search title/author
+    if (genre) url += `genre=${encodeURIComponent(genre)}&`; // Filter by genre
+    if (lang) url += `language=${encodeURIComponent(lang)}&`; // Filter by language
+
+    fetch(url) // Call backend API
+      .then(res => res.json()) // Convert response to JSON
       .then(data => {
-        // Pass the books array to displayBooks() to render them in the grid
-        // The books array contains the latest data from the database
-        // This includes the current value of book.available for each book
-        displayBooks(data.books || []);
+        displayBooks(data.books || []); // Render books into grid
       })
-      .catch(err => console.error("Error:", err));
+      .catch(err => console.error("Error:", err)); // Log error
   }
-  
-  // Function to display books in the grid
-  // This function takes the list of books from the API and renders them as HTML cards
+
+  // Render books into the grid as cards
   function displayBooks(books) {
-    const grid = document.getElementById("booksGrid");
-    
-    // If no books found, show a message
-    if (books.length === 0) {
+    const grid = document.getElementById("booksGrid"); // Grid container
+
+    if (books.length === 0) { // No results
       grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No books found.</div></div>';
-      return;
+      return; // Stop here
     }
-    
-    // Map each book to an HTML card and join them together
+
+    // Convert each book to an HTML card and insert into the page
     grid.innerHTML = books.map(book => `
-      <div class="col-md-4 mb-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <h5 class="card-title">${book.title || 'Untitled'}</h5>
-            <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p>
-            <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p>
-            <p class="card-text"><strong>Genre:</strong> ${book.genre || 'N/A'}</p>
-            <!-- HOW THE STATUS BADGE IS DETERMINED -->
-            <!-- The badge shows "Available" or "Borrowed" based on book.available field -->
-            <!-- book.available is a boolean: true = Available, false = Borrowed -->
-            <!-- This field is the source of truth - it's updated when books are borrowed/returned -->
-            <!-- When a book is borrowed: backend sets available=False, badge shows "Borrowed" -->
-            <!-- When a book is returned: backend sets available=True, badge shows "Available" -->
-            <!-- The badge color also changes: green (bg-success) for Available, gray (bg-secondary) for Borrowed -->
+
+      <div class="col-md-4 mb-4"> <!-- Card column -->
+        <div class="card h-100"> <!-- Card full height -->
+          <div class="card-body"> <!-- Card content -->
+
+            <h5 class="card-title">${book.title || 'Untitled'}</h5> <!-- Book title -->
+            <p class="card-text"><strong>Author:</strong> ${book.author || 'Unknown'}</p> <!-- Author -->
+            <p class="card-text"><strong>Year:</strong> ${book.year || 'N/A'}</p> <!-- Year -->
+            <p class="card-text"><strong>Genre:</strong> ${book.genre || 'N/A'}</p> <!-- Genre -->
+
+            <!-- Status badge: uses book.available (true/false) -->
             <span class="badge ${book.available ? 'bg-success' : 'bg-secondary'}">
               ${book.available ? 'Available' : 'Borrowed'}
             </span>
+
           </div>
-          <div class="card-footer">
-            <a href="/book/${book._id}" class="btn btn-primary btn-sm">View Details</a>
+
+          <div class="card-footer"> <!-- Footer actions -->
+            <a href="/book/${book._id}" class="btn btn-primary btn-sm">View Details</a> <!-- Details link -->
           </div>
+
         </div>
       </div>
-    `).join('');
+
+    `).join(''); // Join all cards into one string
   }
-  
+
+  // Handle filter form submit (search/genre/lang)
   document.getElementById("filterForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const search = document.getElementById("search").value;
-    const genre = document.getElementById("genre").value;
-    const lang = document.getElementById("lang").value;
-    loadBooks(currentFilter, search, genre, lang);
+    e.preventDefault(); // Prevent reload
+
+    const search = document.getElementById("search").value; // Read search input
+    const genre = document.getElementById("genre").value; // Read genre dropdown
+    const lang = document.getElementById("lang").value; // Read language dropdown
+
+    loadBooks(currentFilter, search, genre, lang); // Fetch filtered results
   });
-  
+
+  // "All Books" tab click
   document.getElementById("tabAll").addEventListener("click", function() {
-    currentFilter = "all";
-    this.classList.add("active");
-    document.getElementById("tabAvail").classList.remove("active");
-    loadBooks(currentFilter);
+    currentFilter = "all"; // Switch mode
+
+    this.classList.add("active"); // Highlight this tab
+    document.getElementById("tabAvail").classList.remove("active"); // Unhighlight other
+
+    loadBooks(currentFilter); // Reload list
   });
-  
+
+  // "Available Only" tab click
   document.getElementById("tabAvail").addEventListener("click", function() {
-    currentFilter = "available";
-    this.classList.add("active");
-    document.getElementById("tabAll").classList.remove("active");
-    loadBooks(currentFilter);
+    currentFilter = "available"; // Switch mode
+
+    this.classList.add("active"); // Highlight this tab
+    document.getElementById("tabAll").classList.remove("active"); // Unhighlight other
+
+    loadBooks(currentFilter); // Reload list
   });
-  
-  // Load initial books when the page first loads
-  loadBooks();
-  
-  // WHY REFRESHING THE BOOK LIST IS NECESSARY:
-  // When a user returns a book on the "My Books" page, the backend updates:
-  // 1. The loan status (marks it as returned)
-  // 2. The book's available field (sets it to True)
-  // However, the All Books page has already loaded the old data (with available=False)
-  // Without refreshing, the page would still show "Borrowed" even though the book is now available
-  // 
-  // HOW THE REFRESH WORKS:
-  // When a book is returned, my-books.html dispatches a 'bookReturned' custom event
-  // This event listener catches that event and automatically calls loadBooks()
-  // loadBooks() fetches fresh data from the API, which now has available=True
-  // displayBooks() then re-renders the grid with the updated status badges
-  // This ensures the UI stays in sync with the database without requiring a manual page refresh
+
+  loadBooks(); // Initial load on first page open
+
+  // Refresh list when another page triggers "bookReturned"
   window.addEventListener('bookReturned', function() {
-    // Reload books with the current filter settings
-    // This fetches fresh data from the API and updates the status badges
-    loadBooks(currentFilter);
+    loadBooks(currentFilter); // Reload with current filter
   });
+
 });
 </script>
 {% endblock %}

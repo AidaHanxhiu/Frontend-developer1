@@ -1,22 +1,39 @@
+{# Extend the base layout template (navbar, footer, shared layout) #}
 {% extends "base.html" %}
 
+{# Set the page title shown in the browser tab #}
 {% block title %}Books Shared With Me{% endblock %}
 
+{# Page-specific CSS block #}
 {% block extra_css %}
+<!-- Link to the stylesheet for the shared books page -->
 <link rel="stylesheet" href="{{ url_for('static', filename='shared-books.css') }}">
 {% endblock %}
 
+{# Main content block #}
 {% block content %}
 
+<!-- Page heading -->
 <h1 class="mb-4">Books Shared With Me</h1>
 
+<!-- Grid container for shared books -->
 <div class="row" id="sharedBooksGrid">
+
+  <!-- Full-width column -->
   <div class="col-12">
+
+    <!-- Informational alert message -->
     <div class="alert alert-info">
-      <i class="bi bi-info-circle"></i> This feature allows users to share books with each other. 
+
+      <!-- Info icon -->
+      <i class="bi bi-info-circle"></i>
+
+      <!-- Feature description message -->
+      This feature allows users to share books with each other. 
       Currently, no books have been shared with you.
     </div>
   </div>
 </div>
 
+{# End of main content block #}
 {% endblock %}

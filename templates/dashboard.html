@@ -1,99 +1,189 @@
+{# Extend the base layout template so this page inherits the navbar, footer, etc. #}
 {% extends "base.html" %}
 
+{# Set the title of the page shown in the browser tab #}
 {% block title %}Dashboard{% endblock %}
 
+{# Extra CSS block for page-specific styles #}
 {% block extra_css %}
+<!-- Link to the main global stylesheet -->
 <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
 {% endblock %}
 
+{# Main content block starts here #}
 {% block content %}
 
+<!-- Row container with bottom margin -->
 <div class="row mb-4">
+  <!-- Full-width column -->
   <div class="col-12">
+    <!-- Main heading of the dashboard page -->
     <h1 class="mb-4">Welcome to Your Dashboard</h1>
   </div>
 </div>
 
-<!-- Stats Cards -->
+<!-- ===================== -->
+<!-- Statistics cards row -->
+<!-- ===================== -->
 <div class="row mb-4">
+
+  <!-- Column for Active Loans card -->
   <div class="col-md-4 mb-3">
+    <!-- Card container -->
     <div class="card text-center">
+      <!-- Card content -->
       <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-book"></i> Active Loans</h5>
+        <!-- Card title with book icon -->
+        <h5 class="card-title">
+          <i class="bi bi-book"></i> Active Loans
+        </h5>
+        <!-- Display number of active loans -->
         <h2 class="text-primary">{{ active_loans|length }}</h2>
-        <a href="{{ url_for('pages.my_books') }}" class="btn btn-outline-primary btn-sm">View All</a>
+        <!-- Link to user's borrowed books -->
+        <a href="{{ url_for('pages.my_books') }}"
+           class="btn btn-outline-primary btn-sm">
+          View All
+        </a>
       </div>
     </div>
   </div>
+
+  <!-- Column for Wishlist card -->
   <div class="col-md-4 mb-3">
+    <!-- Card container -->
     <div class="card text-center">
+      <!-- Card content -->
       <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-heart"></i> Wishlist</h5>
+        <!-- Card title with heart icon -->
+        <h5 class="card-title">
+          <i class="bi bi-heart"></i> Wishlist
+        </h5>
+        <!-- Display number of wishlist items -->
         <h2 class="text-danger">{{ wishlist_count }}</h2>
-        <a href="{{ url_for('pages.wish_list') }}" class="btn btn-outline-danger btn-sm">View Wishlist</a>
+        <!-- Link to wishlist page -->
+        <a href="{{ url_for('pages.wish_list') }}"
+           class="btn btn-outline-danger btn-sm">
+          View Wishlist
+        </a>
       </div>
     </div>
   </div>
+
+  <!-- Column for Browse Books card -->
   <div class="col-md-4 mb-3">
+    <!-- Card container -->
     <div class="card text-center">
+      <!-- Card content -->
       <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-search"></i> Browse Books</h5>
+        <!-- Card title with search icon -->
+        <h5 class="card-title">
+          <i class="bi bi-search"></i> Browse Books
+        </h5>
+        <!-- Short description -->
         <p class="card-text">Discover new books</p>
-        <a href="{{ url_for('pages.all_books') }}" class="btn btn-outline-success btn-sm">Browse</a>
+        <!-- Link to browse all books -->
+        <a href="{{ url_for('pages.all_books') }}"
+           class="btn btn-outline-success btn-sm">
+          Browse
+        </a>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Quick Actions -->
+<!-- ================= -->
+<!-- Quick Actions UI -->
+<!-- ================= -->
 <div class="row">
+  <!-- Full-width column -->
   <div class="col-12">
+    <!-- Card container -->
     <div class="card">
+      <!-- Card header -->
       <div class="card-header">
+        <!-- Header title -->
         <h5 class="mb-0">Quick Actions</h5>
       </div>
+      <!-- Card body -->
       <div class="card-body">
+        <!-- Responsive button layout -->
         <div class="d-grid gap-2 d-md-flex">
-          <a href="{{ url_for('pages.all_books') }}" class="btn btn-primary">
+
+          <!-- Button to browse all books -->
+          <a href="{{ url_for('pages.all_books') }}"
+             class="btn btn-primary">
             <i class="bi bi-book"></i> Browse All Books
           </a>
-          <a href="{{ url_for('pages.search') }}" class="btn btn-outline-primary">
+
+          <!-- Button to search books -->
+          <a href="{{ url_for('pages.search') }}"
+             class="btn btn-outline-primary">
             <i class="bi bi-search"></i> Search Books
           </a>
-          <a href="{{ url_for('pages.my_requests') }}" class="btn btn-outline-info">
+
+          <!-- Button to view user's requests -->
+          <a href="{{ url_for('pages.my_requests') }}"
+             class="btn btn-outline-info">
             <i class="bi bi-file-earmark-text"></i> My Requests
           </a>
+
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ================= -->
 <!-- Recent Activity -->
+<!-- ================= -->
 <div class="row mt-4">
+  <!-- Full-width column -->
   <div class="col-12">
+    <!-- Card container -->
     <div class="card">
+      <!-- Card header -->
       <div class="card-header">
+        <!-- Header title -->
         <h5 class="mb-0">Recent Activity</h5>
       </div>
+      <!-- Card body -->
       <div class="card-body">
+
+        {# Check if the user has active loans #}
         {% if active_loans %}
+
+        <!-- Section heading -->
         <h6>Active Loans</h6>
+
+        <!-- List group for loans -->
         <ul class="list-group list-group-flush">
+
+          {# Loop through the first 5 active loans #}
           {% for loan in active_loans[:5] %}
           <li class="list-group-item">
+            <!-- Book icon and loan ID -->
             <i class="bi bi-book"></i> Loan ID: {{ loan._id }}
+            <!-- Status badge -->
             <span class="badge bg-primary ms-2">Active</span>
           </li>
           {% endfor %}
+
         </ul>
+
+        {# If no active loans exist #}
         {% else %}
-        <p class="text-muted">No active loans. <a href="{{ url_for('pages.all_books') }}">Browse books</a> to get started!</p>
+        <!-- Message encouraging user to browse books -->
+        <p class="text-muted">
+          No active loans.
+          <a href="{{ url_for('pages.all_books') }}">Browse books</a>
+          to get started!
+        </p>
         {% endif %}
+
       </div>
     </div>
   </div>
 </div>
 
+{# End of main content block #}
 {% endblock %}
-

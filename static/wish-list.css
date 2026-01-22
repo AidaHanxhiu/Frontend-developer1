@@ -1,57 +1,62 @@
-/* General body styling */
+/* General page styling */
 body {
-  background-color: #f8f9fa;
-  font-family: "Segoe UI", Arial, sans-serif;
-  color: #212529;
+  background-color: #f8f9fa;            /* Light background */
+  font-family: "Segoe UI", Arial, sans-serif; /* Default font */
+  color: #212529;                       /* Main text color */
 }
 
-/* Headings */
+/* Page headings */
 h1, h2 {
-  color: #212529;
+  color: #212529;                       /* Dark heading color */
 }
 
-/* Wishlist card grid */
+/* Wishlist cards grid */
 #wishGrid .card {
-  border: none;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease-in-out;
-}
-#wishGrid .card:hover {
-  transform: scale(1.02);
+  border: none;                         /* Remove border */
+  border-radius: 10px;                  /* Rounded corners */
+  background-color: #fff;               /* White background */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);/* Soft shadow */
+  transition: transform 0.2s ease-in-out; /* Smooth hover */
 }
 
-/* Request list section */
+/* Wishlist card hover */
+#wishGrid .card:hover {
+  transform: scale(1.02);               /* Slight zoom */
+}
+
+/* Request list cards */
 #requestsList .card {
-  border-radius: 10px;
-  border: none;
-  background-color: #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;                  /* Rounded corners */
+  border: none;                         /* No border */
+  background-color: #ffffff;            /* White background */
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1); /* Subtle shadow */
 }
 
 /* Buttons */
 .btn-outline-secondary {
-  border-radius: 5px;
-  font-weight: 500;
+  border-radius: 5px;                   /* Rounded button */
+  font-weight: 500;                     /* Medium text weight */
 }
+
+/* Button hover */
 .btn-outline-secondary:hover {
-  background-color: #212529;
-  color: #fff;
+  background-color: #212529;            /* Dark background */
+  color: #fff;                          /* White text */
 }
 
 /* Footer */
 footer {
-  font-size: 0.9rem;
-  background-color: #f1f3f5;
-  color: #212529;
+  font-size: 0.9rem;                    /* Small text */
+  background-color: #f1f3f5;            /* Light background */
+  color: #212529;                       /* Text color */
 }
 
 /* Links */
 a {
-  color: #212529;
-  text-decoration: none;
+  color: #212529;                       /* Link color */
+  text-decoration: none;                /* No underline */
 }
+
 a:hover {
-  text-decoration: underline;
+  text-decoration: underline;           /* Underline on hover */
 }
