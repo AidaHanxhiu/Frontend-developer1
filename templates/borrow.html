@@ -72,51 +72,86 @@
 
 {% block extra_js %}
 <script>
-// JavaScript code that runs when the page loads
-// This handles the borrow form submission and communicates with the backend API
+/**
+ * JavaScript code that handles the borrow book form submission
+ * 
+ * This script:
+ * 1. Listens for form submission when user clicks "Confirm Borrow"
+ * 2. Sends POST request to /api/loans to create a loan
+ * 3. Shows success message and redirects to "My Books" page
+ * 4. Handles errors gracefully
+ * 
+ * The script runs after the page loads (DOMContentLoaded event)
+ */
 document.addEventListener("DOMContentLoaded", function() {
-  // Get the borrow form element
+  // Get the borrow form element from the page
   const borrowForm = document.getElementById("borrowForm");
+  
+  // Only proceed if the form exists (safety check - prevents errors if form is missing)
   if (borrowForm) {
-    // Listen for form submission (when user clicks "Confirm Borrow")
+    // Listen for form submission (when user clicks "Confirm Borrow" button)
     borrowForm.addEventListener("submit", function(e) {
-      // Prevent the default form submission (which would reload the page)
-      // We want to handle it with JavaScript instead
+      // Prevent the default form submission behavior
+      // By default, HTML forms reload the page when submitted
+      // We want to handle it with JavaScript/AJAX instead (no page reload)
       e.preventDefault();
       
       // Get the book ID from the hidden input field
-      // This tells the backend which book to borrow
+      // The book ID was set by the backend template: value="{{ book._id }}"
+      // This tells the backend which book the user wants to borrow
       const bookId = document.getElementById("bookId").value;
       
       // Send a POST request to the backend API to create a loan
       // The API endpoint is /api/loans (defined in routes_api.py)
-      // This request creates a loan record and updates the book's availability
+      // This request:
+      //   1. Creates a loan record in the database
+      //   2. Updates the book's availability to False (marks as borrowed)
       fetch("/api/loans", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Send the book_id in the request body
-        // The backend uses this to create the loan and mark the book as unavailable
+        method: "POST",                                    // HTTP POST method
+        headers: { "Content-Type": "application/json" },   // Tell server we're sending JSON
+        // Send the book_id in the request body as JSON
+        // The backend uses this to:
+        //   - Identify which book to borrow
+        //   - Create the loan record
+        //   - Mark the book as unavailable
         body: JSON.stringify({ book_id: bookId })
       })
       .then(res => {
-        // Check if the response was successful (status 200-299)
+        // Check if the HTTP response was successful (status code 200-299)
         if (res.ok) {
+          // Response is OK, parse JSON and continue
           return res.json();
         }
-        // If not successful, parse error message and reject the promise
+        // Response is not OK (400, 401, 404, 500, etc.)
+        // Parse the error message from the response and reject the promise
+        // This will trigger the .catch() handler below
         return res.json().then(data => Promise.reject(data));
       })
       .then(data => {
-        // If borrow was successful, show success message
+        // Request succeeded - book was borrowed successfully
+        
+        // Show success message to user
         alert("Book borrowed successfully!");
+        
         // Redirect user to "My Books" page to see their borrowed books
-        // The backend has already updated the book's available field to False
+        // The backend has already:
+        //   - Created the loan record
+        //   - Updated the book's available field to False
         window.location.href = "/my-books";
       })
       .catch(err => {
-        // If there was an error (book not available, server error, etc.)
+        // Request failed - handle the error
+        // Possible errors:
+        //   - Book not available (someone else borrowed it)
+        //   - User not logged in
+        //   - Server error
+        //   - Network error
+        
+        // Show error message to user (use error message if available, otherwise generic message)
         const errorMessage = err.message || "Error connecting to server";
         alert(errorMessage);
+        
+        // Log error details to browser console for debugging
         console.error("Borrow error:", err);
       });
     });

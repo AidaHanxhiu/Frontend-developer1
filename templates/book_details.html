@@ -158,50 +158,80 @@
 
 {% block extra_js %}
 <script>
-// JavaScript code that handles user interactions on the book details page
-// This includes adding/removing from wishlist and submitting reviews
+/**
+ * JavaScript code that handles user interactions on the book details page
+ * 
+ * This script handles two main features:
+ * 1. Wishlist toggle - Add/remove books from wishlist
+ * 2. Review submission - Submit book reviews
+ * 
+ * The script runs after the page loads (DOMContentLoaded event)
+ */
 document.addEventListener("DOMContentLoaded", function() {
-  // Get the book ID from the template (passed from backend)
+  // Get the book ID from the template (passed from backend via Jinja2)
+  // book._id is converted to string and then to JSON-safe format
   const bookId = {{ book._id|string|tojson }};
   
+  // ============================================
   // WISHLIST TOGGLE FUNCTIONALITY
+  // ============================================
   // When user clicks the wishlist button, add or remove the book from their wishlist
+  // The button shows "Add to Wishlist" or "Remove from Wishlist" based on current state
+  
   const wishlistBtn = document.getElementById("wishlistBtn");
   if (wishlistBtn) {
     // Check if book is currently in wishlist (from backend template variable)
+    // This initial state comes from the server when the page loads
+    // in_wishlist is a boolean passed from the Flask route
     let isInWishlist = {{ in_wishlist|default(false)|tojson }};
     
+    // Listen for clicks on the wishlist button
     wishlistBtn.addEventListener("click", function() {
-      // If in wishlist, use DELETE to remove it; otherwise use POST to add it
+      // Determine HTTP method and URL based on current wishlist state
+      // If book is IN wishlist: use DELETE to remove it
+      // If book is NOT in wishlist: use POST to add it
       const method = isInWishlist ? "DELETE" : "POST";
-      // API endpoint depends on action: DELETE uses book_id in URL, POST uses body
+      
+      // API endpoint depends on action:
+      // - DELETE: /api/wishlist/{bookId} (book_id in URL)
+      // - POST: /api/wishlist (book_id in request body)
       const url = isInWishlist ? `/api/wishlist/${bookId}` : "/api/wishlist";
       
       // Send request to backend API
       fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
+        method: method,                                    // HTTP method (POST or DELETE)
+        headers: { "Content-Type": "application/json" },  // Tell server we're sending JSON
         // Only send body for POST (adding to wishlist)
+        // DELETE requests don't need a body - book_id is in the URL
         body: isInWishlist ? null : JSON.stringify({ book_id: bookId })
       })
-      .then(res => res.json())
+      .then(res => res.json())  // Convert response to JavaScript object
       .then(data => {
-        // Toggle the local state
+        // Request succeeded - update the UI to reflect new state
+        
+        // Toggle the local state variable
+        // If it was true (in wishlist), now it's false (not in wishlist), and vice versa
         isInWishlist = !isInWishlist;
         
-        // Update button text
+        // Update button text to match new state
+        // "Remove from Wishlist" if now in wishlist, "Add to Wishlist" if not
         const wishlistText = document.getElementById("wishlistText");
         if (wishlistText) {
           wishlistText.textContent = isInWishlist ? "Remove from" : "Add to";
         }
         
-        // Update button icon
+        // Update button icon to match new state
+        // Bootstrap Icons: bi-heart-fill (filled heart) = in wishlist
+        //                  bi-heart (outline heart) = not in wishlist
         const icon = wishlistBtn.querySelector("i");
         if (icon) {
           icon.className = isInWishlist ? "bi bi-heart-fill" : "bi bi-heart";
         }
       })
-      .catch(err => console.error("Error:", err));
+      .catch(err => {
+        // If request fails (network error, server error, etc.), log it
+        console.error("Error:", err);
+      });
     });
   }
   
